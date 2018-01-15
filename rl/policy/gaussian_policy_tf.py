@@ -2,11 +2,11 @@ import tensorflow as tf
 
 
 # Step_based
-class GaussianPolicy(object):
+class GaussianPolicyTF(object):
     """
     Policy Function Approximator
     """
-    def __init__(self, env, featurizer, learning_rate, scope="policy_estimator"):
+    def __init__(self, env, featurizer, learning_rate, scope="gaussian_policy_pg"):
         self.input_dim = featurizer.num_features
         self.output_dim = env.action_space.shape[0]
         with tf.variable_scope(scope):

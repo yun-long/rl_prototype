@@ -1,7 +1,19 @@
 import numpy as np
 from collections import namedtuple
 
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+Transition = namedtuple('Transition', ['state', 'action', 'next_state', 'reward'])
+EpisodesStats = namedtuple("Stats", ['rewards'])
+
+def discount_norm_rewards(rewards, gamma):
+    discounted_rewards = np.zeros_like(rewards)
+    running_add = 0
+    for t in reversed(range(0, len(rewards))):
+        running_add = running_add * gamma + rewards[t]
+        discounted_rewards[t] = running_add
+    discounted_rewards -= np.mean(discounted_rewards)
+    discounted_rewards /= np.std(discounted_rewards)
+    return  discounted_rewards
+
 
 class ReplayMemory(object):
 

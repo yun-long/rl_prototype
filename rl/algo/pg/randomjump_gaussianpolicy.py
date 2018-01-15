@@ -1,6 +1,6 @@
 from rl.env.random_jump import RandomJumpEnv
-from rl.policy.gaussian_policy import GaussianPolicy
-from rl.policy.value_estimator import ValueEstimator
+from rl.policy.gaussian_policy_tf import GaussianPolicyTF
+from rl.policy.value_estimator_tf import ValueEstimatorTF
 from rl.featurizer.rbf_featurizer import RBFFeaturizer
 #
 import numpy as np
@@ -12,7 +12,7 @@ from collections import namedtuple
 EpisodeStats = namedtuple("Stats", [ "episode_rewards"])
 Transition = namedtuple("Transition", ["state", "action", "reward", "next_state"])
 
-def reps(env, policy_estimator, value_estimator, num_episodes, discounted_factor=1.0):
+def actor_critic(env, policy_estimator, value_estimator, num_episodes, discounted_factor=1.0):
     stats = EpisodeStats(episode_rewards=np.zeros(num_episodes))
     for i_episode in range(num_episodes):
         state = env.reset()
@@ -78,12 +78,12 @@ mean_rewards = np.zeros(shape=(num_trails, num_episodes))
 for i in range(num_trails):
     tf.reset_default_graph()
     global_step = tf.Variable(0, name="global_step", trainable=False)
-    rbf_featurizer = RBFFeaturizer(env, num_features=20)
-    policy_estimator = GaussianPolicy(env, rbf_featurizer, learning_rate=0.0001)
-    value_estimator = ValueEstimator(env, rbf_featurizer, learning_rate=0.01)
+    rbf_featurizer = RBFFeaturizer(env, num_featuries=20)
+    policy_estimator = GaussianPolicyTF(env, rbf_featurizer, learning_rate=0.0001)
+    value_estimator = ValueEstimatorTF(env, rbf_featurizer, learning_rate=0.01)
     with tf.Session() as sess:
         sess.run(tf.initialize_all_variables())
-        stats = reps(env, policy_estimator, value_estimator, num_episodes, discounted_factor=0.95)
+        stats = actor_critic(env, policy_estimator, value_estimator, num_episodes, discounted_factor=0.95)
     mean_rewards[i, :] = stats.episode_rewards
     sess.close()
 

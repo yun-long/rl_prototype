@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-class ValueEstimator(object):
+class ValueEstimatorTF(object):
 
     def __init__(self, env, featurizer, learning_rate, scope="value_estimator"):
         self.input_dim = featurizer.num_features

@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class RBFFeaturizer(object):
-    def __init__(self, env, num_features=10, beta=20):
+    def __init__(self, env, num_featuries=10, beta=20):
         self.beta = beta
         self.obs_low = env.observation_space.low
         self.obs_high = env.observation_space.high
         self.norm_low = -1
         self.norm_high = 1
-        self.num_features = num_features
+        self.num_featuries = num_featuries
 
     def normalizer(self, state):
         norm_state = (state - self.obs_low) / (self.obs_high - self.obs_low)
@@ -17,7 +17,7 @@ class RBFFeaturizer(object):
 
     def transform(self, state):
         norm_state = self.normalizer(state)
-        centers = np.array([i * (self.norm_high-self.norm_low) / (self.num_features-1) + self.norm_low for i in range(self.num_features)])
+        centers = np.array([i * (self.norm_high-self.norm_low) / (self.num_featuries-1) + self.norm_low for i in range(self.num_featuries)])
         phi = np.exp(-self.beta*(norm_state - centers) ** 2)
         return phi
 
@@ -31,7 +31,7 @@ class RBFFeaturizer(object):
             y_features.append(features)
         y_features = np.array(y_features)
         fig = plt.figure()
-        for i in range(self.num_features):
+        for i in range(self.num_featuries):
             plt.plot(x_features, y_features[:, i])
             plt.hold(True)
         if show == True:
