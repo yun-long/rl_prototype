@@ -1,4 +1,4 @@
-from env.random_jump import RandomJumpEnv
+from rl.env.random_jump import RandomJumpEnv
 import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial

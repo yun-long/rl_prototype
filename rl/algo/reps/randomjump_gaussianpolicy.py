@@ -10,6 +10,7 @@ from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 import itertools
 import sys
+import matplotlib.pyplot as plt
 #
 def stable_log_exp_sum(x, N=None):
     """
@@ -25,10 +26,7 @@ def stable_log_exp_sum(x, N=None):
         y = max_x + np.log(np.sum(np.exp(x-max_x)) / N)
     return y
 
-
-
-
-def reps(env,featurizer, policy_fn, dual_fn, num_episodes, num_steps, num_samples, eta, v, discounted_factor=1.0):
+def reps(env,featurizer, policy_fn, dual_fn, num_episodes, num_steps, num_samples, eta, v, epsilon, discounted_factor=1.0):
     stats = EpisodesStats(rewards=np.zeros(num_episodes))
     for i_episodes in range(num_episodes):
         state = env.reset()
@@ -46,7 +44,7 @@ def reps(env,featurizer, policy_fn, dual_fn, num_episodes, num_steps, num_sample
                 action = policy_fn.predict(state, theta_sample=theta_sample)
                 next_state, reward, done, _ = env.step(action)
                 # save
-                stats.rewards[i_episodes] += reward
+                # stats.rewards[i_episodes] += reward
                 rewards.append(reward)
                 features.append(featurizer.transform(state))
                 next_features.append(featurizer.transform(next_state))
@@ -95,21 +93,22 @@ def reps(env,featurizer, policy_fn, dual_fn, num_episodes, num_steps, num_sample
                     v = params_new[1:]
                     td_error = rewards.reshape((len(rewards),)) + np.dot(v, (next_features - features))
                     weights.append(np.exp(td_error / eta))
-                    rewards_episode.append(np.sum(rewards))
+                    rewards_episode.append(np.mean(rewards))
                     break
         # print(eta, v)
         policy_fn.update(weights, theta_samples)
+        stats.rewards[i_episodes] = np.mean(rewards_episode)
         print("Mean reward {}".format(np.mean(rewards_episode)))
-        if np.mean(rewards_episode) > -60:
-            obs = env.reset()
-            theta_samples = policy_fn.samples(num_samples)
-            theta = theta_samples[0]
-            while True:
-                env.render()
-                action = policy_fn.predict(state, theta)
-                next, reward, done, _ = env.step(action)
-                if done:
-                    break
+        # if np.mean(rewards_episode) > -60:
+        #     obs = env.reset()
+        #     theta_samples = policy_fn.samples(num_samples)
+        #     theta = theta_samples[0]
+        #     while True:
+        #         env.render()
+        #         action = policy_fn.predict(state, theta)
+        #         next, reward, done, _ = env.step(action)
+        #         if done:
+        #             break
     return stats
 
 #
@@ -126,26 +125,49 @@ num_featuries = 10
 eta = 5
 v = np.random.rand(num_featuries) / np.sqrt(num_featuries)
 # print(v)
-num_trails = 10
+num_trials = 10
 num_episodes = 100
 num_steps = 1000
 num_samples = 10
-epsilon = 1
+epsilon_coeffs = np.array([2,4,8]) * 1e-1
+
+mean_rewards = np.zeros(shape=(num_trials, num_episodes, len(epsilon_coeffs)))
 #
-for i_trails in range(num_trails):
-    #
-    rbf_featurizer = RBFFeaturizer(env, num_featuries=num_featuries)
-    policy_fn = GaussianPolicyNP(env, rbf_featurizer)
-    # value_fn = ValueEstimatorNP(rbf_featurizer)
-    dual_fn = DualFunction(eta_init=eta, v_init=v, epsilon=epsilon)
-    #
-    stats = reps(env,
-                 featurizer=rbf_featurizer,
-                 policy_fn=policy_fn,
-                 dual_fn = dual_fn,
-                 num_episodes=num_episodes,
-                 num_steps = num_steps,
-                 num_samples = num_samples,
-                 eta = eta,
-                 v = v,
-                 discounted_factor=0.95)
+for i_epsilon, epsilon in enumerate(epsilon_coeffs):
+    print("epsilon : ", epsilon)
+    for i_trails in range(num_trials):
+        print("Trials : ", i_trails)
+        #
+        rbf_featurizer = RBFFeaturizer(env, num_featuries=num_featuries)
+        policy_fn = GaussianPolicyNP(env, rbf_featurizer)
+        # value_fn = ValueEstimatorNP(rbf_featurizer)
+        dual_fn = DualFunction(eta_init=eta, v_init=v, epsilon=epsilon)
+        #
+        stats = reps(env=env,
+                     featurizer=rbf_featurizer,
+                     policy_fn=policy_fn,
+                     dual_fn = dual_fn,
+                     num_episodes=num_episodes,
+                     num_steps = num_steps,
+                     num_samples = num_samples,
+                     eta = eta,
+                     v = v,
+                     epsilon=epsilon,
+                     discounted_factor=0.95)
+        mean_rewards[i_trails, :, i_epsilon] = stats.rewards
+
+
+fig = plt.figure()
+plt.hold("True")
+ax = fig.add_subplot(111)
+ax.set_xlabel("Iteration")
+ax.set_ylabel("Average reward")
+c = ['b', 'm', 'r']
+
+for l in range(len(epsilon_coeffs)):
+    r_mean = np.mean(mean_rewards[:,:,l], axis=0)
+    r_std = np.std(mean_rewards[:,:,l], axis=0)
+    plt.fill_between(range(num_episodes), r_mean - r_std, r_mean + r_std, alpha=0.3, color=c[l])
+    plt.plot(range(num_episodes), r_mean, color=c[l], label='$\epsilon$ = ' + str(epsilon_coeffs[l]))
+plt.legend(loc='lower right')
+plt.show()
