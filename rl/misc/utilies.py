@@ -7,8 +7,8 @@ def discount_norm_rewards(rewards, gamma):
     for t in reversed(range(0, len(rewards))):
         running_add = running_add * gamma + rewards[t]
         discounted_rewards[t] = running_add
-    discounted_rewards -= np.mean(discounted_rewards)
-    discounted_rewards /= np.std(discounted_rewards)
+    # discounted_rewards -= np.mean(discounted_rewards)
+    # discounted_rewards /= np.std(discounted_rewards)
     return  discounted_rewards
 
 def stable_log_exp_sum(x, N=None):

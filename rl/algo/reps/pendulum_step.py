@@ -33,29 +33,42 @@ def step_reps(env, featurizer, policy_fn, num_episodes, num_steps, num_samples, 
     for i_episodes in range(num_episodes):
         state = env.reset()
         memory = ReplayMemory(capacity=num_steps)
+        memories = [memory for _ in range(num_samples)]
         for t in itertools.count():
             # TODO: ===========================
             # TODO: Need Sample of Actions
             # TODO: ===========================
+            actions = policy_fn.samples_actions(state=state, num_samples=num_samples)
             for i_samples in range(num_samples):
-                action = policy_fn.predict_step(state)
-            next_state, reward, done, _ = env.step(action)
-            if type(next_state) is not float:
-                next_state = next_state.reshape(len(next_state))
+                action = actions[i_samples]
+                next_state, reward, done, _ = env.step(action)
+                features = featurizer.transform(state)
+                next_features = featurizer.transform(next_state)
+                memories[i_samples].push(features, action, next_features, reward)
+            # if type(next_state) is not float:
+            #     next_state = next_state.reshape(len(next_state))
             #
-            features = featurizer.transform(state)
-            next_features = featurizer.transform(next_state)
-            memory.push(features, action, next_features, reward)
+            # features = featurizer.transform(state)
+            # next_features = featurizer.transform(next_state)
+            # memory.push(features, action, next_features, reward)
             #
-            if done or t >= num_steps:
-                transitions = memory.sample()
-                batch_data = FeaturesTransition(*zip(*transitions))
-                eta_init, v_init, weights = dual_function_gradient(epsilon=epsilon, param_eta=eta_init,
-                                                          param_v=v_init, data_set=batch_data)
-                #
-                value_fn.update_reps(new_param_v=v_init)
-                policy_fn.update_step(weights=weights, Phi_features=batch_data.features, actions=batch_data.action)
-                print("epsidoes {}, mean rewards: {}".format(i_episodes, np.mean(batch_data.reward)))
+            if t >= num_steps:
+                weights_samples = np.zeros((num_steps, num_samples))
+                features_samples = np.zeros((num_steps, 30 ,num_samples))
+                actions_samples = np.zeros((num_steps, num_samples))
+                rewards_samples = np.zeros((num_steps, num_samples))
+                for i_samples in range(num_samples):
+                    transitions = memories[i_samples].sample()
+                    batch_data = FeaturesTransition(*zip(*transitions))
+                    eta_init, v_init, weight = dual_function_gradient(epsilon=epsilon, param_eta=eta_init,
+                                                                       param_v=v_init, data_set=batch_data)
+                    weights_samples[:,i_samples] = weight
+                    features_samples[:, :, i_samples] = batch_data.features
+                    actions_samples[:, i_samples] = batch_data.action
+                    rewards_samples[:, i_samples] = batch_data.reward
+                # value_fn.update_reps(new_param_v=v_init)
+                policy_fn.update_step(weights=weights_samples, Phi_features=features_samples, actions=actions_samples)
+                print("epsidoes {}, mean rewards: {}".format(i_episodes, np.sum(rewards_samples)))
                 break
             state = next_state
 #
@@ -67,10 +80,10 @@ policy_fn = GaussianPolicyNP(env, rbf_featurizer)
 value_fn = ValueEstimatorNP(rbf_featurizer)
 param_v = value_fn.param_v
 param_eta = 3
-epsilon = 2e-1
+epsilon = 5e-1
 #
 num_samples = 10
-num_steps = 1000
+num_steps = 200
 num_episodes = 1000
 #
 step_reps(env=env,
