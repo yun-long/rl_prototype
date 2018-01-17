@@ -10,10 +10,10 @@ class RandomJumpEnv(gym.Env):
     }
 
     def __init__(self):
-        self.min_action = -0.1
-        self.max_action = 0.1
+        self.min_action = -0.5
+        self.max_action = 0.5
         self.min_position = -1.2
-        self.max_position = 0.6
+        self.max_position = 0.65
         self.goal_position = 0.45
         #
         self.low_state = self.min_position
@@ -36,7 +36,7 @@ class RandomJumpEnv(gym.Env):
         return np.array(self.state)
 
     def _step(self, action):
-        noise = np.random.normal(-0.01, 0.01, 1)
+        noise = np.random.normal(-0.001, 0.001, 1)
         position = self.state[0]
         #
         force = min(max(action[0], self.min_action), self.max_action)
@@ -44,7 +44,8 @@ class RandomJumpEnv(gym.Env):
         #
         done = bool(position >= (self.goal_position-0.01) and position <= (self.goal_position+0.01))
         #
-        cost = np.square(self.goal_position - position)
+        # cost = np.square(self.goal_position - position)
+        cost = np.square(self.goal_position - position) + np.square(force)
         reward = -cost
         self.state = [min(max(position, self.min_position), self.max_position)]
         #

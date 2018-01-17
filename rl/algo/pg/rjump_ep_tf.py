@@ -65,12 +65,7 @@ print("Action space high: ", env.action_space.high[0])
 print("Observation space : ", env.observation_space)
 print("Observation space low : ", env.observation_space.low[0])
 print("Observation space high: ", env.observation_space.high[0])
-#
 
-
-# rbf_featurizer = RBFFeaturizer(env, num_features=10)
-# rbf_featurizer.plot_examples()
-#
 #
 num_trails = 5
 num_episodes = 100
@@ -89,9 +84,6 @@ for i in range(num_trails):
 
 fig = plt.figure()
 plt.hold('on')
-ax = fig.add_subplot(111)
-ax.set_xlabel('Iteration')
-ax.set_ylabel('Average reward')
 r_mean = np.mean(mean_rewards,axis=0)
 r_std = np.std(mean_rewards, axis=0)
 plt.fill_between(range(num_episodes), r_mean - r_std, r_mean + r_std, alpha=0.3)

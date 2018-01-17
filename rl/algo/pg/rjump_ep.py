@@ -1,48 +1,13 @@
+from rl.featurizer.rbf_featurizer import RBFFeaturizer
 from rl.env.random_jump import RandomJumpEnv
 import numpy as np
 import matplotlib.pyplot as plt
 #
 env = RandomJumpEnv()
 #
-class RBFFeaturizer(object):
-    def __init__(self, env, num_features=10, beta=20):
-        self.beta = beta
-        self.obs_low = env.observation_space.low
-        self.obs_high = env.observation_space.high
-        self.norm_low = -1
-        self.norm_high = 1
-        self.num_features = num_features
-
-    def normalizer(self, state):
-        norm_state = (state - self.obs_low) / (self.obs_high - self.obs_low)
-        norm_state = norm_state * 2 - 1
-        return norm_state
-
-    def transform(self,state):
-        norm_state = self.normalizer(state)
-        centers = np.array([i * (self.norm_high-self.norm_low) / (self.num_features-1) + self.norm_low for i in range(self.num_features)])
-        phi = np.exp(-self.beta*(norm_state - centers) ** 2)
-        return phi
-
-    def plot_examples(self, show=True):
-        N = 1000
-        y_features = []
-        x_features = []
-        for state in np.linspace(self.obs_low, self.obs_high, N):
-            x_features.append(state)
-            features = self.transform(state)
-            y_features.append(features)
-        y_features = np.array(y_features)
-        fig = plt.figure()
-        for i in range(self.num_features):
-            plt.plot(x_features, y_features[:, i])
-            plt.hold(True)
-        if show == True:
-            plt.show()
-
-class LinearPolicy(object):
+class GaussianPolicy(object):
     """
-    Linear Policy
+    Gaussian Policy
     """
     def __init__(self, env, learning_rate, num_features):
         self.num_outputs = env.action_space.shape[0]
@@ -110,7 +75,7 @@ num_episodes = 500
 rewards_trials = np.zeros(shape=(num_trials, num_episodes))
 
 for j in range(num_trials):
-    policy = LinearPolicy(env=env,
+    policy = GaussianPolicy(env=env,
                             learning_rate=1e-8,
                             num_features=num_features)
     for k in range(num_episodes):
@@ -135,9 +100,6 @@ for j in range(num_trials):
 
 fig = plt.figure()
 plt.hold(True)
-ax = fig.add_subplot(111)
-ax.set_xlabel("Iteration")
-ax.set_ylabel("Average Reward")
 r_mean = np.mean(rewards_trials, axis=0)
 r_std = np.std(rewards_trials, axis=0)
 plt.fill_between(range(num_episodes), r_mean-r_std, r_mean+r_std, alpha=0.3)

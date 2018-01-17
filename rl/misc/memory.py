@@ -1,19 +1,10 @@
 import numpy as np
+import random
 from collections import namedtuple
 
-Transition = namedtuple('Transition', ['state', 'action', 'next_state', 'reward'])
-EpisodesStats = namedtuple("Stats", ['rewards'])
-
-def discount_norm_rewards(rewards, gamma):
-    discounted_rewards = np.zeros_like(rewards)
-    running_add = 0
-    for t in reversed(range(0, len(rewards))):
-        running_add = running_add * gamma + rewards[t]
-        discounted_rewards[t] = running_add
-    discounted_rewards -= np.mean(discounted_rewards)
-    discounted_rewards /= np.std(discounted_rewards)
-    return  discounted_rewards
-
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
+FeaturesTransition = namedtuple("FeaturesTransition", ('features', 'action', 'next_features', 'reward'))
+EpisodesStats = namedtuple("Stats", ('rewards'))
 
 class ReplayMemory(object):
 
@@ -26,14 +17,18 @@ class ReplayMemory(object):
         """SAVE A Transition. """
         if len(self.memory) < self.capacity:
             self.memory.append(None)
-        self.memory[self.position] = Transition(*args)
+        self.memory[self.position] = FeaturesTransition(*args)
         self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size=None):
         if batch_size == None:
             return self.memory
         else:
-            return np.random.sample(self.memory, batch_size)
+            return random.sample(self.memory, batch_size)
 
     def __len__(self):
         return len(self.memory)
+
+    def reset(self):
+        self.memory = []
+        self.position = 0

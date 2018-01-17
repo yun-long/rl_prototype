@@ -41,7 +41,7 @@ def reps(env,featurizer, policy_fn, dual_fn, num_episodes, num_steps, num_sample
             actions = []
             for t in itertools.count():
                 # take a step
-                action = policy_fn.predict(state, theta_sample=theta_sample)
+                action = policy_fn.predict(state)
                 next_state, reward, done, _ = env.step(action)
                 # save
                 # stats.rewards[i_episodes] += reward
@@ -61,7 +61,7 @@ def reps(env,featurizer, policy_fn, dual_fn, num_episodes, num_steps, num_sample
                     # eta, v = dual_fn.update(rewards, features, next_features)
                     x0 = np.hstack([eta, v])
                     bounds = [(-np.inf, np.inf) for _ in x0]
-                    bounds[0] = (0., np.inf)
+                    bounds[0] = (0.00001, np.inf)
 
                     def dual_fn(rewards, features_diff, inputs):
                         param_eta = inputs[0]
@@ -90,25 +90,16 @@ def reps(env,featurizer, policy_fn, dual_fn, num_episodes, num_steps, num_sample
                                                      maxiter=100,
                                                      disp=False)
                     eta = params_new[0]
+                    # print(eta)
                     v = params_new[1:]
                     td_error = rewards.reshape((len(rewards),)) + np.dot(v, (next_features - features))
                     weights.append(np.exp(td_error / eta))
                     rewards_episode.append(np.mean(rewards))
                     break
-        # print(eta, v)
+        # print(eta)
         policy_fn.update(weights, theta_samples)
         stats.rewards[i_episodes] = np.mean(rewards_episode)
         print("Mean reward {}".format(np.mean(rewards_episode)))
-        # if np.mean(rewards_episode) > -60:
-        #     obs = env.reset()
-        #     theta_samples = policy_fn.samples(num_samples)
-        #     theta = theta_samples[0]
-        #     while True:
-        #         env.render()
-        #         action = policy_fn.predict(state, theta)
-        #         next, reward, done, _ = env.step(action)
-        #         if done:
-        #             break
     return stats
 
 #
@@ -126,11 +117,11 @@ eta = 5
 v = np.random.rand(num_featuries) / np.sqrt(num_featuries)
 # print(v)
 num_trials = 10
-num_episodes = 100
+num_episodes = 50
 num_steps = 1000
 num_samples = 10
-epsilon_coeffs = np.array([2,4,8]) * 1e-1
-
+epsilon_coeffs = np.array([2]) * 1e-1
+rbf_featurizer = RBFFeaturizer(env, num_featuries=num_featuries)
 mean_rewards = np.zeros(shape=(num_trials, num_episodes, len(epsilon_coeffs)))
 #
 for i_epsilon, epsilon in enumerate(epsilon_coeffs):
@@ -138,7 +129,6 @@ for i_epsilon, epsilon in enumerate(epsilon_coeffs):
     for i_trails in range(num_trials):
         print("Trials : ", i_trails)
         #
-        rbf_featurizer = RBFFeaturizer(env, num_featuries=num_featuries)
         policy_fn = GaussianPolicyNP(env, rbf_featurizer)
         # value_fn = ValueEstimatorNP(rbf_featurizer)
         dual_fn = DualFunction(eta_init=eta, v_init=v, epsilon=epsilon)

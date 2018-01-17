@@ -1,47 +1,11 @@
+from rl.featurizer.rbf_featurizer import RBFFeaturizer
 from rl.env.random_jump import RandomJumpEnv
 import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
 from scipy.optimize import minimize
-import pandas as pd
 #
-class RBFFeaturizer(object):
-    def __init__(self, env, num_features=10, beta=20):
-        self.beta = beta
-        self.obs_low = env.observation_space.low
-        self.obs_high = env.observation_space.high
-        self.norm_low = -1
-        self.norm_high = 1
-        self.num_features = num_features
-
-    def normalizer(self, state):
-        norm_state = (state - self.obs_low) / (self.obs_high - self.obs_low)
-        norm_state = norm_state * 2 - 1
-        return norm_state
-
-    def transform(self,state):
-        norm_state = self.normalizer(state)
-        centers = np.array([i * (self.norm_high-self.norm_low) / (self.num_features-1) + self.norm_low for i in range(self.num_features)])
-        phi = np.exp(-self.beta*(norm_state - centers) ** 2)
-        return phi
-
-    def plot_examples(self, show=True):
-        N = 1000
-        y_features = []
-        x_features = []
-        for state in np.linspace(self.obs_low, self.obs_high, N):
-            x_features.append(state)
-            features = self.transform(state)
-            y_features.append(features)
-        y_features = np.array(y_features)
-        fig = plt.figure()
-        for i in range(self.num_features):
-            plt.plot(x_features, y_features[:, i])
-            plt.hold(True)
-        if show == True:
-            plt.show()
-
-class LinearPolicy(object):
+class GaussianPolicy(object):
     def __init__(self, env, num_features):
         self.num_features = num_features
         self.Mu_w = np.zeros(self.num_features)
@@ -109,12 +73,11 @@ num_trials = 10
 num_episodes = 100
 num_samples = 20
 #
-df = pd.DataFrame()
 mean_rewards = np.zeros(shape=(num_trials, num_episodes, len(epsilon_coeffs)))
 #
 for l, epsilon in enumerate(epsilon_coeffs):
     for k in range(num_trials):
-        policy = LinearPolicy(env=env,
+        policy = GaussianPolicy(env=env,
                                 num_features=num_features)
         eta_hat = eta_init
         for j in range(num_episodes):
@@ -123,8 +86,6 @@ for l, epsilon in enumerate(epsilon_coeffs):
             T = 0
             theta_samples = policy.samples(num_samples=num_samples)
             numbers = save_parameters(policy.Mu_w, policy.Sigma_w)
-            # print(numbers)
-            df = df.append(numbers, ignore_index=True)
             rewards = []
             while True:
                 T += 1
@@ -145,14 +106,9 @@ for l, epsilon in enumerate(epsilon_coeffs):
                     mean_rewards[k, j, l] = np.mean(rewards)
                     break
             print("epsilon == {0}, Trail == {1}, Episode == {2}, Mean Reward == {3}, eta == {4}".format(epsilon,k,j,np.mean(rewards_episode),eta_hat))
-        if l ==0:
-            df.to_csv("./output.csv")
 
 fig = plt.figure()
 plt.hold('on')
-ax = fig.add_subplot(111)
-ax.set_xlabel('Iteration')
-ax.set_ylabel('Average reward')
 c = ['b', 'm', 'r']
 
 for l in range(len(epsilon_coeffs)):
