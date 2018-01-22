@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
-# from env.Pend2dBallThrowDMP import Pend2dBallThrowDMP
 from rl.env.ball_throw import Pend2dBallThrowDMP
+from rl.policy.numpy.gp_constant_mean import GPConstantMean
 from scipy.optimize import minimize
 from functools import partial
 
@@ -25,39 +25,28 @@ def optimize_dual_function(eps, rewards, x0):
     result = minimize(optfunc, x0, method="L-BFGS-B", jac=True, options={'disp': False}, bounds=[(0, None)])
     return result.x
 
-def eval_policy(mu, sigma, numSamples):
-    theta_samples = np.random.multivariate_normal(mu, sigma, numSamples)
+def eval_policy(theta_samples):
     rewards = np.zeros(numSamples)
     for i in range(numSamples):
         rewards[i] = env.getReward(theta_samples[i, :])
-    return theta_samples, rewards
-
-def reps_update(rewards, eta_hat, theta_samples):
-    weights = np.exp(rewards / eta_hat)
-    print("weight shape", weights.shape)
-    print("theta samples shape", theta_samples.shape)
-    mu = weights.dot(theta_samples)/np.sum(weights)
-    Z = (np.sum(weights)**2-np.sum(weights**2))/np.sum(weights)
-    sigma = np.sum([weights[i]*(np.outer((theta_samples[i]-mu), (theta_samples[i]-mu))) for i in range(len(weights))], 0)/Z
-    return mu, sigma
+    return rewards
 
 meanReward = np.zeros((maxIter, numTrials, len(epsilon_coeffs)))
 
 for l, epsilon in enumerate(epsilon_coeffs):
     for k in range(numTrials):
-        Mu_w = np.zeros(numDim)
-        Sigma_w = np.eye(numDim) * 1e6
-        theta_samples, rewards = eval_policy(Mu_w, Sigma_w, numSamples)
+        policy = GPConstantMean(num_dim=numDim)
         for j in range(maxIter):
+            theta_samples = policy.sample_theta(numSamples)
+            rewards = eval_policy(theta_samples)
             # normalize rewards
-            rewards_normalize = (rewards - min(rewards)) / (max(rewards) - min(rewards))
+            rewards_normalize = (rewards - np.max(rewards)) / (np.max(rewards) - np.min(rewards))
             # optimaize dual function
             eta_hat = optimize_dual_function(epsilon, rewards_normalize, eta_init)
-            print(eta_init)
+            #
+            weights = np.exp(rewards_normalize / eta_hat)
             # update the parameters of the Gaussian policy
-            Mu_w, Sigma_w = reps_update(rewards_normalize, eta_hat, theta_samples)
-            # take new samples
-            theta_samples, rewards = eval_policy(Mu_w, Sigma_w, numSamples)
+            policy.update_em(theta_samples, weights)
             #
             meanReward[j, k, l] = np.mean(rewards)
             buf = ('Lambda ' + str(epsilon) +' - Trial ' + str(k) +
@@ -70,7 +59,7 @@ for l, epsilon in enumerate(epsilon_coeffs):
             eta_init = eta_hat
 
         if k == numTrials -1:
-            env.animate_fig(np.random.multivariate_normal(Mu_w, Sigma_w), epsilon)
+            env.animate_fig(np.random.multivariate_normal(policy.Mu, policy.Sigma), epsilon)
 
 fig = plt.figure()
 plt.hold('on')

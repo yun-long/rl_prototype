@@ -1,6 +1,6 @@
 from rl.env.random_jump import RandomJumpEnv
-from rl.policy.gaussian_policy_tf import GaussianPolicyTF
-from rl.policy.value_estimator_tf import ValueEstimatorTF
+from rl.policy.tf.gaussian_policy_tf import GaussianPolicyTF
+from rl.policy.tf.value_estimator_tf import ValueEstimatorTF
 from rl.featurizer.rbf_featurizer import RBFFeaturizer
 #
 import numpy as np
@@ -73,7 +73,7 @@ mean_rewards = np.zeros(shape=(num_trails, num_episodes))
 for i in range(num_trails):
     tf.reset_default_graph()
     global_step = tf.Variable(0, name="global_step", trainable=False)
-    rbf_featurizer = RBFFeaturizer(env, num_featuries=20)
+    rbf_featurizer = RBFFeaturizer(env=env, dim_features=20)
     policy_estimator = GaussianPolicyTF(env, rbf_featurizer, learning_rate=0.0001)
     value_estimator = ValueEstimatorTF(env, rbf_featurizer, learning_rate=0.01)
     with tf.Session() as sess:

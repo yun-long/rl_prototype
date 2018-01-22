@@ -1,15 +1,13 @@
 from rl.env.random_jump import RandomJumpEnv
 from rl.featurizer.rbf_featurizer import RBFFeaturizer
-from rl.policy.value_estimator_np import ValueEstimatorNP
-from rl.policy.gaussian_policy_np import GaussianPolicyNP
+from rl.trash.gaussian_policy_np import GaussianPolicyNP
 from rl.misc.dual_function import DualFunction
-from rl.misc.memory import Transition, EpisodesStats, discount_norm_rewards
+from rl.misc.memory import EpisodesStats
 #
 from functools import partial
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 import itertools
-import sys
 import matplotlib.pyplot as plt
 #
 def stable_log_exp_sum(x, N=None):

@@ -55,7 +55,6 @@ def optimize_dual_function(eps, rewards, x0):
     return result.x
 
 def save_parameters(Mu, Sigma):
-    numbers = pd.Series()
     for i, mu in enumerate(Mu):
         numbers.loc[i] = mu
     for j, sigma in enumerate(np.diag(Sigma)):

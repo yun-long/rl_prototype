@@ -7,20 +7,16 @@
 # from gym.envs.classic_control.pendulum import PendulumEnv
 from rl.env.random_jump import RandomJumpEnv
 from rl.featurizer.rbf_featurizer import RBFFeaturizer
-from rl.policy.value_estimator_np import ValueEstimatorNP
-from rl.policy.gaussian_policy_np import GaussianPolicyNP
-from rl.misc.dual_function import DualFunction
-from rl.misc.utilies import discount_norm_rewards
+from rl.trash.value_estimator_np import ValueEstimatorNP
+from rl.trash.gaussian_policy_np import GaussianPolicyNP
+from rl.misc.dual_function import dual_function_gradient
 #
 from functools import partial
 from scipy.optimize import fmin_l_bfgs_b
 import numpy as np
 import itertools
-import sys
-import matplotlib.pyplot as plt
+
 #
-
-
 def stable_log_exp_sum(x, N=None):
     """
     y = np.log(np.sum(np.exp(x)) / len(x)) # not stable
@@ -35,7 +31,7 @@ def stable_log_exp_sum(x, N=None):
         y = max_x + np.log(np.sum(np.exp(x-max_x)) / N)
     return y
 
-def reps(env, policy_fn, value_fn, dual_fn, num_episodes, num_steps,eta, v, discounted_factor=1.0):
+def reps(env, policy_fn, value_fn, num_episodes, num_steps,eta, v, discounted_factor=1.0):
     # stats = EpisodesStats(rewards=np.zeros(num_episodes))
     for i_episodes in range(num_episodes):
         state = env.reset()
@@ -55,6 +51,7 @@ def reps(env, policy_fn, value_fn, dual_fn, num_episodes, num_steps,eta, v, disc
             #
             if t >= num_steps:
                 N = len(rewards)
+                actions = np.array(actions)
                 rewards = np.array(rewards)
                 rewards = rewards.reshape((N,))
                 features = np.array(features).reshape((-1, N))
@@ -91,11 +88,11 @@ def reps(env, policy_fn, value_fn, dual_fn, num_episodes, num_steps,eta, v, disc
                                                  disp=False)
                 eta = params_new[0]
                 v = params_new[1:]
-                print(eta)
+                # print(eta)
                 td_error = rewards.reshape((len(rewards),)) + np.dot(v, (next_features - features))
                 weights = np.exp(td_error / eta)
                 value_fn.update_reps(new_param_v = v)
-                policy_fn.update_step(weights=weights, Phi_features=features.T, actions=actions)
+                policy_fn.update_step(weights=weights, Phi=features.T, Actions=actions)
                 break
             state = next_state
         print("mean rewards : ", np.sum(rewards))
@@ -137,12 +134,10 @@ for i_epsilon, epsilon in enumerate(epsilon_coeffs):
         policy_fn = GaussianPolicyNP(env, rbf_featurizer)
         value_fn = ValueEstimatorNP(rbf_featurizer)
         v_init = np.squeeze(value_fn.param_v)
-        dual_fn = DualFunction(eta_init=eta_init, v_init=v_init, epsilon=epsilon)
         #
         stats = reps(env=env,
                      policy_fn=policy_fn,
                      value_fn=value_fn,
-                     dual_fn=dual_fn,
                      num_episodes=num_episodes,
                      num_steps=num_steps,
                      eta= eta_init,

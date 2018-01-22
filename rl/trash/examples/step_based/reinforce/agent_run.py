@@ -3,7 +3,7 @@ if "../../../" not in sys.path:
     sys.path.append("../../../")
 
 import gym
-from rl.algo.reinforce.reinforce import REINFORCE
+from rl.trash.examples.step_based.reinforce.reinforce import REINFORCE
 # import matplotlib.pyplot as plt
 import numpy as np
 

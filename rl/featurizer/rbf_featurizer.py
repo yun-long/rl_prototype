@@ -18,6 +18,7 @@ class RBFFeaturizer(object):
         return norm_state
 
     def transform(self, state):
+        state = np.reshape(state, (-1, self.obs_dims))
         norm_state = self.normalizer(state)
         centers = np.array([i * (self.norm_high-self.norm_low) / (self.dim_features-1) + self.norm_low for i in range(self.dim_features)])
         phi = np.exp(-self.beta*(norm_state - centers) ** 2).reshape(self.num_features)
@@ -42,6 +43,7 @@ class RBFFeaturizer(object):
             states[ :, i_dim ] = np.linspace(self.obs_low[i_dim], self.obs_high[i_dim], N)
         for i_state, state in enumerate(states):
             features = self.transform(state)
+            features = np.reshape(features, newshape=(self.dim_features, self.obs_dims))
             y_features.append(features)
         y_features = np.array(y_features)
         if self.obs_dims == 1:
