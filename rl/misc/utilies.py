@@ -8,22 +8,19 @@ def discount_norm_rewards(rewards, gamma):
     for t in reversed(range(0, len(rewards))):
         running_add = running_add * gamma + rewards[t]
         discounted_rewards[t] = running_add
-    # discounted_rewards -= np.mean(discounted_rewards)
-    # discounted_rewards /= np.std(discounted_rewards)
+    discounted_rewards -= np.mean(discounted_rewards)
+    discounted_rewards /= np.std(discounted_rewards)
     return  discounted_rewards
 
-def stable_log_exp_sum(x, N=None):
+def stable_log_exp_sum(x):
     """
-    y = np.log(np.sum(np.exp(x)) / len(x)) # not stable
-      = np.max(x) + np.log(np.sum(np.exp(x - np.max(x))) / len(x)) # stable
+    y = np.log(np.sum(np.exp(x)) # not stable
+      = np.max(x) + np.log(np.sum(np.exp(x - np.max(x))) # stable
     :param x:
     :return:
     """
     max_x = np.max(x)
-    if N is None:
-        y = max_x + np.log(np.sum(np.exp(x-max_x)))
-    else:
-        y = max_x + np.log(np.sum(np.exp(x-max_x)) / N)
+    y = max_x + np.log(np.sum(np.exp(x-max_x)))
     return y
 
 def fig_to_image(fig):
@@ -35,3 +32,10 @@ def fig_to_image(fig):
     image = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
     image = image.reshape(height, width, 3)
     return  image
+
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
+

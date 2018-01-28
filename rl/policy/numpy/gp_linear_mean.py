@@ -8,92 +8,47 @@ class GPLinearMean(object):
         self.num_actions = env.action_space.shape[0]
         self.featurizer = featurizer
         #
-        self.Theta = np.random.randn(self.num_features, self.num_actions) / np.sqrt(self.num_features)
-        self.Sigma_theta = np.eye(self.num_features * self.num_actions) * 1e-2 # for exploration in parameter space
+        self.Mu_theta = np.random.randn(self.num_features, self.num_actions) / np.sqrt(self.num_features)
+        self.Sigma_action = np.eye(self.num_actions) * 1e2 # for exploration in parameter space
         # Gaussian noise, for exploration in action space
-        self.Mu_noise = np.zeros(self.num_actions) * 0
-        self.Sigma_noise = np.eye(self.num_actions) * 1e-2
+        # self.Mu_noise = np.zeros(self.num_actions) * 0
+        # self.Sigma_noise = np.eye(self.num_actions) * 1e-2
 
-    def sample_theta(self, num_samples):
-        """
-        Exploration in paramter space, used for Episode-based usually
-        :param num_samples:
-        :return:
-        """
-        Mu = self.Theta.reshape(self.num_actions*self.num_features)
-        theta_samples = np.random.multivariate_normal(mean=Mu,
-                                                      cov=self.Sigma_theta,
-                                                      size=num_samples)
-        return theta_samples
-
-    def predict_action(self, state, theta):
-        """
-        Predict action according to the parameter samples. Episode-based usually
-        :param state:
-        :param theta:
-        :return:
-        """
-        theta = np.reshape(theta, self.Theta.shape)
-        featurized_state = self.featurizer.transform(state)
-        action = np.dot(theta.T, featurized_state)
-        return action
-
-
-    def sample_action(self, state):
+    def predict_action(self, state):
         """
         Exploration in action_space, used for Step-based usually.
         :param state:
         :return:
         """
-        featurized_state = self.featurizer.transform(state)
-        noise = np.random.multivariate_normal(mean=self.Mu_noise,
-                                              cov=self.Sigma_noise,
-                                              size=1)
-        action = np.dot(self.Theta.T, featurized_state) + noise
-        return action, noise
+        featurized_state = self.featurizer.transform(state).T
+        Mu_action = np.dot(self.Mu_theta.T, featurized_state).reshape(self.num_actions)
+        try:
+            action = np.random.multivariate_normal(Mu_action, self.Sigma_action)
+        except:
+            raise ValueError
+        return action
 
     def update_pg(self):
         pass
 
-    def update_em(self, Weights, Phi, A):
-        """
 
-        :param Weights: Weighted rewards,
-        :param Phi: Features of sampled states
-        :param A: Actions
-        :return: None
-        """
-        H, T, N = Phi.shape
-        Weights = Weights.reshape(T*H)
-        Weights = np.diag(Weights)
-        A = A.reshape(T*H)
-        theta = np.zeros_like(self.Theta)
-        for n in range(N):
-            phi_n = Phi[:,:,n]
-            phi_n = phi_n.reshape(T*H)
-            theta_tmp = np.dot(phi_n.T, Weights)
-            theta_tmp = np.dot(theta_tmp, phi_n)
-            theta_tmp = 1./ theta_tmp
-            # theta_tmp = np.atleast_2d(theta_tmp)
-            # theta_tmp = np.linalg.inv(theta_tmp)
-            theta_tmp = np.dot(theta_tmp, phi_n.T)
-            theta_tmp = np.dot(theta_tmp, Weights)
-            theta_tmp = np.dot(theta_tmp, A)
-            theta[n, :] = theta_tmp
-        self.Theta = theta
-
-
-    def update_em2(self, Weights, Phi, A):
-        H = Weights.shape[0]
-        T = Weights.shape[1]
-        phi = Phi.reshape(( H*T, self.num_features))
-        Q = Weights.reshape((H*T))
+    def update_wml(self, Weights, Phi, A):
+        T = Phi.shape[0]
+        phi = Phi.reshape((T, self.num_features))
+        Q = Weights.reshape(T)
         Q = np.diag(Q)
-        A = A.reshape((H*T, 1))
-        theta_tmp = np.dot(phi.T, Q)
-        theta_tmp = np.dot(theta_tmp, phi)
-        theta_tmp = np.linalg.inv(theta_tmp)
-        theta_tmp = np.dot(theta_tmp, phi.T)
-        theta_tmp = np.dot(theta_tmp, Q)
-        theta_tmp = np.dot(theta_tmp, A)
-        self.Theta = theta_tmp
+        A = A.reshape((T, self.num_actions))
+        theta_tmp1 = np.linalg.inv(np.dot(phi.T, np.dot(Q, phi)))
+        theta_tmp2 = np.dot(phi.T, np.dot(Q, A))
+        self.Mu_theta = np.dot(theta_tmp1, theta_tmp2).reshape(self.Mu_theta.shape)
+        #
+        # print(Weights)
+        Z = (np.sum(Weights)**2 - np.sum(Weights**2)) / np.sum(Weights)
+        # print(Z)
+        nume_sum = 0
+        for i in range(len(Weights)):
+            tmp = np.outer((A[i] - np.dot(self.Mu_theta.T, phi[i, :])), (A[i] - np.dot(self.Mu_theta.T, phi[i, :])))
+            tmp = Weights[i] * tmp
+            nume_sum += tmp
+        self.Sigma_action = nume_sum / Z
+        # print(self.Mu_theta, self.Sigma_action)

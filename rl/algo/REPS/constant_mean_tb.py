@@ -1,3 +1,6 @@
+"""
+An implementation of REPS on Throw Ball Environment with Gaussian Policy, Constant Mean
+"""
 from matplotlib import pyplot as plt
 import numpy as np
 from rl.env.ball_throw import Pend2dBallThrowDMP

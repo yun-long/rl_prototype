@@ -2,6 +2,7 @@ import numpy as np
 from gym import spaces
 import gym
 from gym.utils import seeding
+import math
 
 class RandomJumpEnv(gym.Env):
     metadata = {
@@ -10,11 +11,11 @@ class RandomJumpEnv(gym.Env):
     }
 
     def __init__(self):
-        self.min_action = -0.5
-        self.max_action = 0.5
+        self.min_action = -1.0
+        self.max_action = 1.0
         self.min_position = -1.2
-        self.max_position = 0.65
-        self.goal_position = 0.45
+        self.max_position = 0.60
+        self.goal_position = 0.4
         #
         self.low_state = self.min_position
         self.high_state = self.max_position
@@ -32,7 +33,8 @@ class RandomJumpEnv(gym.Env):
         return [seed]
 
     def _reset(self):
-        self.state = [self.np_random.uniform(low=-0.58, high=-0.62)]
+        self.state = [self.np_random.uniform(low=-.90, high=-.80)]
+        # self.state = [-1.2]
         return np.array(self.state)
 
     def _step(self, action):
@@ -42,11 +44,15 @@ class RandomJumpEnv(gym.Env):
         force = min(max(action[0], self.min_action), self.max_action)
         position += (force + noise)
         #
-        done = bool(position >= (self.goal_position-0.01) and position <= (self.goal_position+0.01))
+        done = bool(position >= (self.goal_position-0.05) and position <= (self.goal_position+0.05))
         #
         # cost = np.square(self.goal_position - position)
         cost = np.square(self.goal_position - position) + np.square(force)
         reward = -cost
+        if done:
+            reward = 100
+        # reward = np.atleast_1d(reward)
+        reward -= math.pow(action[0],2)*0.1
         self.state = [min(max(position, self.min_position), self.max_position)]
         #
         return self.state[0], reward, done, {}

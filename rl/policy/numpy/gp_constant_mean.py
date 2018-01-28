@@ -6,7 +6,7 @@ class GPConstantMean(object):
     def __init__(self, num_dim):
         self.num_dim = num_dim
         self.Mu = np.zeros(shape=num_dim)
-        self.Sigma = np.eye(num_dim) * 1e3
+        self.Sigma = np.eye(num_dim) * 1e-1
 
     def sample_theta(self, num_samples):
         theta_samples = np.random.multivariate_normal(mean=self.Mu,
