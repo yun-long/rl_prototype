@@ -18,6 +18,7 @@ class OneHotFeaturizer(object):
         N = self.num_features
         y_features = []
         x_states = []
+        print("\nOneHotFeaturizer example of discrete environment.")
         for state in range(N):
             state_features = self.transform(state)
             x_states.append(state)

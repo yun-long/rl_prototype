@@ -50,11 +50,13 @@ def mc_control_epsilon_greedy(env, num_episodes, discount_factor=1.0, save=False
             if save:
                 frames.append(save_value_fn_gif(Q, i_episode))
         state_action_pairs = set([(x[0], x[1]) for x in episode])
+        # print("Episode {}".format(i_episode))
         for state, action in state_action_pairs:
             state_action_pair = (state, action)
             # Find the first occurance of the (state, action) pair in the episode
             first_occurence_idx = next(i for i, x in enumerate(episode)
                                        if x[0] == state and x[1] == action)
+            # print("state {}, action {}, idx {}".format(state, action, first_occurence_idx))
             # sum up all rewards since the first occurance
             G = sum([x[2] *(discount_factor**i) for i, x in enumerate(episode[first_occurence_idx:])])
             # Caculate average return for this state over all sampled episodes

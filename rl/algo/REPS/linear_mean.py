@@ -44,7 +44,7 @@ value_featurizer = PolyFeaturizer(env, degree=degree)
 # Number of episodes
 num_episodes = 5000
 #
-epsilon = 0.8
+epsilon = 0.3
 # number of sample rollouts
 policy = GPLinearMean(env, policy_featurizer)
 value = ValueEstimator(value_featurizer)

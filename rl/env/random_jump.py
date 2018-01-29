@@ -38,7 +38,7 @@ class RandomJumpEnv(gym.Env):
         return np.array(self.state)
 
     def _step(self, action):
-        noise = np.random.normal(-0.001, 0.001, 1)
+        noise = np.random.normal(-0.01, 0.01, 1)
         position = self.state[0]
         #
         force = min(max(action[0], self.min_action), self.max_action)

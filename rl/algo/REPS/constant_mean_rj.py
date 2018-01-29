@@ -1,7 +1,7 @@
 """
 An implementation of REPS on random jumpy environment with Gaussian Policy, Constant mean.
 """
-
+from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
 from rl.env.random_jump import RandomJumpEnv
 from rl.featurizer.rbf_featurizer import RBFFeaturizer
 from rl.policy.numpy.gp_constant_mean import GPConstantMean
@@ -37,6 +37,7 @@ def optimize_dual_function(eps, rewards, x0):
     return result.x
 
 env = RandomJumpEnv()
+# env = Continuous_MountainCarEnv()
 print("observation low : ", env.observation_space.low)
 print("observation high : ", env.observation_space.high)
 #
@@ -44,7 +45,7 @@ eta_init = 5
 epsilon = 0.5 # KL bound
 num_features = 10
 num_trials = 10
-num_episodes = 200
+num_episodes = 40
 num_samples = 20
 rbf_featuries = RBFFeaturizer(env, num_features)
 #
@@ -61,6 +62,7 @@ for j in range(num_episodes):
             features = rbf_featuries.transform(state=state)
             action = np.atleast_2d(np.dot(theta, features))
             next_obs, reward, done, _ = env.step(action)
+            reward = np.atleast_1d(reward)
             obs = next_obs
             rewards.append(reward)
             if done or t >= 1000:
@@ -68,7 +70,9 @@ for j in range(num_episodes):
                 break
         sample_rewards.append(np.sum(rewards))
     sample_rewards = np.array(sample_rewards)
-    rewards_normalize = (sample_rewards - np.max(sample_rewards)) / (np.max(sample_rewards) - np.min(sample_rewards))
+    rewards_normalize = sample_rewards
+    # rewards_normalize = (sample_rewards - np.max(sample_rewards)) / (np.max(sample_rewards) - np.min(sample_rewards))
+    # rewards_normalize = sample_rewards / np.sum(sample_rewards)
     eta_hat = optimize_dual_function(epsilon, rewards_normalize, eta_hat)
     weights = np.exp(rewards_normalize / eta_hat)
     policy.update_em(theta_samples, weights)
