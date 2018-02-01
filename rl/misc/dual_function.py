@@ -10,8 +10,6 @@ def dual_function_gradient(epsilon, param_eta, param_v, transitions):
     #
     N = len(transitions.reward)
     rewards = np.array(transitions.reward).reshape((N,))
-    rewards = discount_norm_rewards(rewards, gamma=0.95)
-    # rewards = (rewards - np.min(rewards)) / (np.max(rewards) - np.min(rewards)) * 1.
     features = np.array(transitions.features).reshape((N, -1))
     next_features = np.array(transitions.next_features).reshape((N, -1))
     features_diff = next_features - features
@@ -26,14 +24,18 @@ def dual_function_gradient(epsilon, param_eta, param_v, transitions):
         param_v = inputs[1:]
         advantages = rewards + np.dot(features_diff, param_v)
         weights = advantages / param_eta
-        Z = np.exp(advantages / param_eta)
+        # Z = np.exp(advantages  / param_eta)
+        Z = np.exp((advantages - np.max(advantages))/ param_eta)
         g = param_eta * epsilon + param_eta * (stable_log_exp_sum(x=weights) + np.log(1. / len(rewards)))
         grad_eta = epsilon + stable_log_exp_sum(x=weights) + np.log(1./len(rewards)) - Z.dot(advantages) / (param_eta * np.sum(Z))
         grad_v = Z.dot(features_diff) / np.sum(Z)
         return g, np.hstack([grad_eta, grad_v])
     #
     opt_fn = partial(dual_fn, rewards, features_diff)
-    results = minimize(opt_fn, x0, method="L-BFGS-B", jac=True, options={'disp':False}, bounds=bounds)
+    results = minimize(opt_fn, x0, method="l-bfgs-b", jac=True, options={'disp':False, 'iprint':2}, tol=1e-6,
+                       bounds=bounds)
+    if not results.success:
+        print("Optimization failed!")
     param_eta = results.x[0]
     param_v = results.x[1:]
     X = (rewards + np.dot(features_diff, param_v)) / param_eta

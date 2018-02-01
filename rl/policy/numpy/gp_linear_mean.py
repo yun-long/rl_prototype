@@ -9,10 +9,7 @@ class GPLinearMean(object):
         self.featurizer = featurizer
         #
         self.Mu_theta = np.random.randn(self.num_features, self.num_actions) / np.sqrt(self.num_features)
-        self.Sigma_action = np.eye(self.num_actions) * 1e2 # for exploration in parameter space
-        # Gaussian noise, for exploration in action space
-        # self.Mu_noise = np.zeros(self.num_actions) * 0
-        # self.Sigma_noise = np.eye(self.num_actions) * 1e-2
+        self.Sigma_action = np.eye(self.num_actions) * 1e4 # for exploration in parameter space
 
     def predict_action(self, state):
         """
@@ -42,13 +39,10 @@ class GPLinearMean(object):
         theta_tmp2 = np.dot(phi.T, np.dot(Q, A))
         self.Mu_theta = np.dot(theta_tmp1, theta_tmp2).reshape(self.Mu_theta.shape)
         #
-        # print(Weights)
         Z = (np.sum(Weights)**2 - np.sum(Weights**2)) / np.sum(Weights)
-        # print(Z)
         nume_sum = 0
         for i in range(len(Weights)):
             tmp = np.outer((A[i] - np.dot(self.Mu_theta.T, phi[i, :])), (A[i] - np.dot(self.Mu_theta.T, phi[i, :])))
             tmp = Weights[i] * tmp
             nume_sum += tmp
         self.Sigma_action = nume_sum / Z
-        # print(self.Mu_theta, self.Sigma_action)

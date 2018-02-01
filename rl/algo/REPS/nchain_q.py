@@ -1,13 +1,14 @@
 from rl.featurizer.one_hot_featurizer import OneHotFeaturizer
 from rl.policy.numpy.value_estimator import ValueEstimator
-from rl.misc.utilies import stable_log_exp_sum
 from rl.misc.memory import Transition, ReplayMemory
-# from rl.policy.numpy.discrete_policy import EpsilonGreedyPolicy
 from gym.envs.toy_text.nchain import NChainEnv
 from collections import defaultdict
 from functools import partial
 from scipy.optimize import minimize
 import numpy as np
+import itertools
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 
 def process_transitions(episode_data, featurizer):
     n = defaultdict(float)
@@ -51,22 +52,19 @@ def optimize_dual_function(N, r, features_diff, init_eta, init_v, epsilon):
     return eta, v, weights
 
 
-def reps_step_based(env, featurizer, num_episodes, param_eta, param_v, epsilon, discount_factor=1.0):
+def reps_step_based(env, featurizer, num_episodes, param_eta0, param_v0, epsilon, discount_factor=1.0):
     num_actions = env.action_space.n
     num_states = env.observation_space.n
     q_dist = np.ones((num_states, num_actions)) / (num_states * num_actions)
     mu_dist = np.ones(num_states) / num_states
     policy_k = q_dist / mu_dist[:, None]
-    # print("Initial state-action distribution \n{}".format(q_dist))
-    # print("Initial state distribution \n{}".format(mu_dist))
-    # print("Initial policy distribution \n{} ".format(policy))
+    episodes_reward = []
+    weights_dict = defaultdict()
     for i_episode in range(num_episodes):
-        # sample transitions
         episode = []
         state = env.reset()
         rewards = []
-        # print(policy)
-        for t in range(400):
+        for t in range(200):
             action_prob = policy_k[state]
             action = np.random.choice(np.arange(len(action_prob)), p=action_prob)
             next_state, reward, done, _ = env.step(action)
@@ -75,8 +73,6 @@ def reps_step_based(env, featurizer, num_episodes, param_eta, param_v, epsilon, 
                                       next_state=next_state,
                                       reward=reward))
             rewards.append(reward)
-            if done:
-                break
             state = next_state
         # process sampled data
         r, features_diff, keys = process_transitions(episode, featurizer)
@@ -84,10 +80,9 @@ def reps_step_based(env, featurizer, num_episodes, param_eta, param_v, epsilon, 
         param_eta, param_v, weights = optimize_dual_function(N=len(episode),
                                                              r=r,
                                                              features_diff=features_diff,
-                                                             init_eta=param_eta,
-                                                             init_v=param_v,
+                                                             init_eta=param_eta0,
+                                                             init_v=param_v0,
                                                              epsilon=epsilon)
-        weights_dict = defaultdict()
         for j, state_action in enumerate(keys):
             weights_dict[state_action] = weights[j]
         policy_k_1 = np.zeros_like(policy_k)
@@ -95,13 +90,13 @@ def reps_step_based(env, featurizer, num_episodes, param_eta, param_v, epsilon, 
             for action_a in np.arange(num_actions):
                 sum = 0
                 for action_b in np.arange(num_actions):
-                    if (state, action_b) in weights_dict:
-                        sum = sum + (policy_k[state][action_b] * weights_dict[(state, action_b)])
-                if (state, action_a) in weights_dict:
-                    policy_k_1[state][action_a] = policy_k[state][action_a] * weights_dict[(state, action_a)] / sum
+                    sum = sum + (policy_k[state][action_b] * weights_dict[(state, action_b)])
+                policy_k_1[state][action_a] = policy_k[state][action_a] * weights_dict[(state, action_a)] / sum
         policy_k = policy_k_1
-        print("\rEpisode {}, Expected Return {}".format(i_episode, np.mean(rewards)), end="")
-    print(policy_k)
+        episodes_reward.append(np.mean(rewards))
+        print("\rEpisode {}, Expected Return {}.".format(i_episode, np.mean(rewards)))
+        print(policy_k)
+    return episodes_reward
 
 if __name__ == '__main__':
     #
@@ -110,24 +105,34 @@ if __name__ == '__main__':
     print("Observation Space : ", env.observation_space)
     # define featurizer for value function
     featurizer = OneHotFeaturizer(env=env)
-    featurizer.print_examples()
     # define value function
     value_fn = ValueEstimator(featurizer=featurizer)
-    # value_fn.plot_1D(env=env)
     #
-    policy = None
     # initialization paramteres for dual function
-    epsilon = 0.5
-    param_eta = 10.0
-    param_v = value_fn.param_v
+    epsilon = 0.1
+    param_eta0 = 5.0
+    param_v0 = value_fn.param_v
     #
-    reps_step_based(env=env,
-                    featurizer=featurizer,
-                    num_episodes=1000,
-                    param_eta=param_eta,
-                    param_v=param_v,
-                    epsilon=epsilon,
-                    discount_factor=1.0)
-
-
+    num_trails = 10
+    num_episodes = 50
+    trails_reward = np.zeros((10, 50))
+    for i_trail in range(10):
+        reward = reps_step_based(env=env,
+                                 featurizer=featurizer,
+                                 num_episodes=num_episodes,
+                                 param_eta0=param_eta0,
+                                 param_v0=param_v0,
+                                 epsilon=epsilon,
+                                 discount_factor=1.0)
+        trails_reward[i_trail, :] = reward
+    #
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Average reward")
+    r_mean = np.mean(trails_reward, axis=0)
+    r_std = np.std(trails_reward, axis=0)
+    plt.fill_between(range(num_episodes), r_mean - r_std, r_mean + r_std, alpha=0.3)
+    plt.plot(range(num_episodes), r_mean)
+    plt.show()
 

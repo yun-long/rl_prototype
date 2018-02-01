@@ -18,9 +18,9 @@ import itertools
 import numpy as np
 import sys
 #
-env = Continuous_MountainCarEnv()
+# env = Continuous_MountainCarEnv()
 # env = PendulumEnv()
-# env = RandomJumpEnv()
+env = RandomJumpEnv()
 
 print("Action space : ", env.action_space)
 print("Action space low : ", env.action_space.low)
@@ -33,8 +33,8 @@ print("Observation space high: ", env.observation_space.high)
 dim_features = 5
 # policy_featurizer = RBFFeaturizer(env, dim_features=dim_features)
 # rbf_featurizer.plot_examples()
-# policy_featurizer = NoneFeaturizer(env)
-policy_featurizer = PolyFeaturizer(env, degree=2)
+policy_featurizer = NoneFeaturizer(env)
+# policy_featurizer = PolyFeaturizer(env, degree=2)
 # none_featurizer.plot_examples()
 # features for value function
 degree = 2
@@ -42,21 +42,21 @@ value_featurizer = PolyFeaturizer(env, degree=degree)
 # poly_featurizer.plot_examples()
 
 # Number of episodes
-num_episodes = 5000
+num_episodes = 100
 #
-epsilon = 0.3
+epsilon = 0.5
 # number of sample rollouts
 policy = GPLinearMean(env, policy_featurizer)
 value = ValueEstimator(value_featurizer)
 v = np.squeeze(value.param_v)
-eta = 10
+eta = 10.0
 #
 episode_rewards = []
 for i_episodes in range(num_episodes):
     A = []
     Phi = []
     rewards = []
-    memory = ReplayMemory(capacity=10000, type="FeaturesTransition")
+    memory = ReplayMemory(capacity=500, type="FeaturesTransition")
     state = env.reset()
     for t in itertools.count():
         action = policy.predict_action(state)
@@ -73,8 +73,10 @@ for i_episodes in range(num_episodes):
         poly_next_features = value_featurizer.transform(next_state)
         #
         memory.push(poly_features, action, poly_next_features, reward)
-        if done or t >= 1000-1:
+        if t >= 500-1:
             break
+        if done:
+            next_state = env.reset()
         state = next_state
     episode_rewards.append(np.mean(rewards))
     batch = memory.sample()
@@ -91,6 +93,7 @@ for i_episodes in range(num_episodes):
     print("Episode : {}, Reward: {}".format(i_episodes, np.mean(rewards)))
 
 # Optimal Policy Demo
+import time
 state = env.reset()
 while True:
     action = policy.predict_action(state)
@@ -98,7 +101,7 @@ while True:
     state = next_state
     env.render()
     if done:
-        break
+        time.sleep(1)
 
 
 

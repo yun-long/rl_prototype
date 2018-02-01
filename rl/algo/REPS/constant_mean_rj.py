@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from functools import partial
 from scipy.optimize import minimize
 import itertools
+from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
 
 def stable_log_sum_exp(x, N=None):
     """
@@ -65,10 +66,10 @@ for j in range(num_episodes):
             reward = np.atleast_1d(reward)
             obs = next_obs
             rewards.append(reward)
-            if done or t >= 1000:
+            if t >= 1000:
                 # print(done)
                 break
-        sample_rewards.append(np.sum(rewards))
+        sample_rewards.append(np.mean(rewards))
     sample_rewards = np.array(sample_rewards)
     rewards_normalize = sample_rewards
     # rewards_normalize = (sample_rewards - np.max(sample_rewards)) / (np.max(sample_rewards) - np.min(sample_rewards))
@@ -76,6 +77,7 @@ for j in range(num_episodes):
     eta_hat = optimize_dual_function(epsilon, rewards_normalize, eta_hat)
     weights = np.exp(rewards_normalize / eta_hat)
     policy.update_em(theta_samples, weights)
+    print(eta_hat)
     print("episode {}, reward {}".format(j, np.mean(sample_rewards)))
     #
     if j >= (num_episodes-1):
