@@ -1,8 +1,12 @@
 import numpy as np
+import time
+from rl.policy.base import GaussianPolicy
 
-class GPLinearMean(object):
+class GPLinearMean(GaussianPolicy):
 
     def __init__(self, env, featurizer):
+        #
+        self.env = env
         #
         self.num_features = featurizer.num_features
         self.num_actions = env.action_space.shape[0]
@@ -10,6 +14,7 @@ class GPLinearMean(object):
         #
         self.Mu_theta = np.random.randn(self.num_features, self.num_actions) / np.sqrt(self.num_features)
         self.Sigma_action = np.eye(self.num_actions) * 1e4 # for exploration in parameter space
+        super().__init__()
 
     def predict_action(self, state):
         """
@@ -25,7 +30,7 @@ class GPLinearMean(object):
             raise ValueError
         return action
 
-    def update_pg(self):
+    def update_pg(self, alpha_coeff, theta_samples, advantanges):
         pass
 
 
@@ -46,3 +51,17 @@ class GPLinearMean(object):
             tmp = Weights[i] * tmp
             nume_sum += tmp
         self.Sigma_action = nume_sum / Z
+
+    def optimal_policy_demo(self, num_demos):
+        for i_demo in range(num_demos):
+            print("Optimal Policy Demo : ", i_demo)
+            state = self.env.reset()
+            while True:
+                action = self.predict_action(state)
+                next_state, rewards, done, _ = self.env.step(action)
+                state = next_state
+                self.env.render()
+                if done:
+                    time.sleep(1)
+                    break
+

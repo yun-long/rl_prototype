@@ -78,9 +78,3 @@ def plot_episode_stats(stats, smoothing_window=10, noshow=False):
 
     return fig1, fig2, fig3
 
-def rewards_gen(rewards):
-    return rewards
-
-def plot_mean_rewards():
-    fig = plt.figure()
-

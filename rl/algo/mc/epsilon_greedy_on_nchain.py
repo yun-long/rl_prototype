@@ -1,8 +1,7 @@
-from rl.policy.numpy.discrete_policy import EpsilonGreedyPolicy, GreedyPolicy
+from rl.policy import EpsilonGreedyPolicy
 from rl.misc.plotting import plot_value_function
 from rl.misc.utilies import fig_to_image
 from gym.envs.toy_text.nchain import NChainEnv
-from gym.envs.toy_text.blackjack import BlackjackEnv
 from collections import defaultdict
 import numpy as np
 import imageio

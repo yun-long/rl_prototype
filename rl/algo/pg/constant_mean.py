@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from rl.env.ball_throw import Pend2dBallThrowDMP
-from rl.policy.numpy.gp_constant_mean import GPConstantMean
+from rl.policy.gp_constant_mean import GPConstantMean
 from rl.featurizer.rbf_featurizer import RBFFeaturizer
-import time
 
 env = Pend2dBallThrowDMP()
 

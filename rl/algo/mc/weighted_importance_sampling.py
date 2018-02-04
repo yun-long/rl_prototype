@@ -1,11 +1,7 @@
-import gym
-import matplotlib
 import numpy as np
-import sys
 from collections import defaultdict
-from gym.envs.toy_text.blackjack import BlackjackEnv
 from gym.envs.toy_text.nchain import NChainEnv
-from rl.policy.numpy.discrete_policy import RandomPolicy, GreedyPolicy
+from rl.policy import RandomPolicy, GreedyPolicy
 #
 # env = BlackjackEnv()
 env = NChainEnv()

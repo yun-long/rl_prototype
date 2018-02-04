@@ -3,25 +3,20 @@ import random
 from collections import namedtuple
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
-FeaturesTransition = namedtuple("FeaturesTransition", ('features', 'action', 'next_features', 'reward'))
 EpisodesStats = namedtuple("Stats", ('rewards'))
 
-class ReplayMemory(object):
+class Memory(object):
 
-    def __init__(self, capacity, type="Transition"):
+    def __init__(self, capacity):
         self.capacity = capacity
         self.memory = []
         self.position = 0
-        if type == "Transition":
-            self.memory_tuple = Transition
-        else:
-            self.memory_tuple = FeaturesTransition
 
     def push(self, *args):
         """SAVE A Transition. """
         if len(self.memory) < self.capacity:
             self.memory.append(None)
-        self.memory[self.position] = self.memory_tuple(*args)
+        self.memory[self.position] = Transition(*args)
         self.position = (self.position + 1) % self.capacity
 
     def sample(self, batch_size=None):

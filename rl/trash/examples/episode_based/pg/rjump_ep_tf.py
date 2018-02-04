@@ -1,6 +1,6 @@
 from rl.env.random_jump import RandomJumpEnv
-from rl.policy.tf.gaussian_policy_tf import GaussianPolicyTF
-from rl.policy.tf.value_estimator_tf import ValueEstimatorTF
+from rl.standalone.tf.gaussian_policy_tf import GaussianPolicyTF
+from rl.standalone.tf.value_estimator_tf import ValueEstimatorTF
 from rl.featurizer.rbf_featurizer import RBFFeaturizer
 #
 import numpy as np

@@ -7,6 +7,8 @@ class ValueEstimator(object):
         self.num_features = featurizer.num_features
         self.num_output = 1
         self.param_v = np.random.rand(self.num_features, self.num_output) / np.sqrt(self.num_features)
+        # TODO: duplicated code of param_v
+        self.param_v0 = self.param_v.reshape(self.num_features * self.num_output)
         self.featurizer = featurizer
 
     def predict(self, state):
@@ -18,17 +20,3 @@ class ValueEstimator(object):
         self.param_v = new_param_v
         return True
 
-    def plot_1D(self, env, show=True):
-        fig = plt.figure()
-        y_value = []
-        x_state = []
-        for state in np.arange(env.observation_space.n):
-            x_state.append(state)
-            y_value.append(self.predict(state))
-        plt.plot(x_state, y_value)
-        plt.xlabel("States")
-        plt.ylabel("Values")
-        plt.title("Value function")
-        if show:
-            plt.show()
-        return fig

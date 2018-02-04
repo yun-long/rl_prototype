@@ -1,16 +1,14 @@
 """
 An implementation of REPS on random jumpy environment with Gaussian Policy, Constant mean.
 """
-from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
 from rl.env.random_jump import RandomJumpEnv
 from rl.featurizer.rbf_featurizer import RBFFeaturizer
-from rl.policy.numpy.gp_constant_mean import GPConstantMean
+from rl.policy.gp_constant_mean import GPConstantMean
 import numpy as np
-import matplotlib.pyplot as plt
 from functools import partial
 from scipy.optimize import minimize
 import itertools
-from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
+
 
 def stable_log_sum_exp(x, N=None):
     """

@@ -4,7 +4,7 @@ An implementation of REPS on Throw Ball Environment with Gaussian Policy, Consta
 from matplotlib import pyplot as plt
 import numpy as np
 from rl.env.ball_throw import Pend2dBallThrowDMP
-from rl.policy.numpy.gp_constant_mean import GPConstantMean
+from rl.policy.gp_constant_mean import GPConstantMean
 from scipy.optimize import minimize
 from functools import partial
 
