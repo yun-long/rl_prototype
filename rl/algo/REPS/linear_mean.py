@@ -8,15 +8,15 @@ from rl.policy.value_estimator import ValueEstimator
 from rl.misc.dual_function import optimize_dual_fn
 from rl.sampler.standard_sampler import StandardSampler
 from rl.env.random_jump import RandomJumpEnv
-from rl.misc.plot_rewards import plot_trail_episode_rewards
+from rl.misc.plot_rewards import plot_tr_ep_rs
 #
 #
 from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
 import numpy as np
 #
-env = Continuous_MountainCarEnv()
+# env = Continuous_MountainCarEnv()
 # env = PendulumEnv()
-# env = RandomJumpEnv()
+env = RandomJumpEnv()
 #
 print("Action space : ", env.action_space)
 print("Action space low : ", env.action_space.low)
@@ -37,7 +37,7 @@ num_samples = 500
 #
 epsilon = 1.0
 #
-trail_episode_rewards = np.zeros((num_trails, num_episodes))
+mean_rewards = np.zeros((num_trails, num_episodes))
 for i_trail in range(num_trails):
     #
     policy = GPLinearMean(env, pol_featurizer)
@@ -47,7 +47,7 @@ for i_trail in range(num_trails):
     eta0 = 10.0
     for i_episode in range(num_episodes):
         #
-        data_set = sampler.sample_data(policy=policy,N=num_samples)
+        data_set, mean_rs = sampler.sample_data(policy=policy,N=num_samples)
         #
         rewards, val_feat_diff, A, Phi = sampler.process_data(data_set, pol_featurizer, val_featurizer)
         #
@@ -57,8 +57,8 @@ for i_trail in range(num_trails):
         policy.update_wml(Weights=weights, Phi=Phi, A=A)
         # update value function
         value.update(new_param_v=v)
-        print("Trails : {}, Episode : {}, Reward: {}".format(i_trail, i_episode, np.mean(rewards)))
-        trail_episode_rewards[i_trail, i_episode] = np.mean(rewards)
+        print("Trails : {}, Episode : {}, Reward: {}".format(i_trail, i_episode, mean_rs))
+        mean_rewards[i_trail, i_episode] = np.mean(rewards)
 #
-plot_trail_episode_rewards(trail_episode_rewards=trail_episode_rewards,show=True)
+plot_tr_ep_rs(mean_rewards,show=True)
 

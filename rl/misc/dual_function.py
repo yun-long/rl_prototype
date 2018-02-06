@@ -4,7 +4,7 @@ from functools import partial
 #
 opts = dict(disp=False, iprint=2, maxiter=1000, ftol=1e-6)
 
-# # ===================== dual function version 0, for continous case ===================
+# # ===================== REPS dual function version 0, for continous case ===================
 def dual_fn_v0(rewards, features_diff, epsilon, N, inputs):
     """
     Dual function for continuous case, update both "v" and "eta".
@@ -35,7 +35,7 @@ def optimize_dual_fn(rewards, features_diff, init_eta, init_v, epsilon):
     weights = np.exp((adv - np.max(adv))) / np.sum(np.exp(adv - np.max(adv)))
     return eta, v, weights
 
-# # ===================== dual function version 1, for discrete case ===================
+# # ===================== REPS dual function version 1, for discrete case ===================
 def dual_fn_v1(A, features_diff, eta, sa_n, param_v):
     """
     Dual function for distrete case, update parameter "v" only
@@ -58,7 +58,7 @@ def optimize_dual_fn_paramv(rewards, features_diff, init_eta, init_v, epsilon, s
     v = results.x
     return init_eta, v, A, results.fun
 
-# # ===================== dual function version 2, for discrete case ===================
+# # ===================== REPS dual function version 2, for discrete case ===================
 def dual_fn_v2(A, features_diff, epsilon, sa_n, inputs):
     param_eta = inputs[0]
     param_v = inputs[1:]
@@ -90,11 +90,16 @@ def optimize_dual_fn_params(rewards, features_diff, init_eta, init_v, epsilon, s
 
 
 
-#
+# # ===================== fREPS dual function version 0, for discrete case ===================
+def fdual_fn_v1(A, features_diff, epsilon, sa_n, kappa, inputs):
+    param_eta = inputs[0]
+    param_v = inputs[1:]
+
+    pass
 
 
-
-
+def optimize_fdual_fn():
+    pass
 
 
 

@@ -70,11 +70,9 @@ for j in range(num_episodes):
         sample_rewards.append(np.mean(rewards))
     sample_rewards = np.array(sample_rewards)
     rewards_normalize = sample_rewards
-    # rewards_normalize = (sample_rewards - np.max(sample_rewards)) / (np.max(sample_rewards) - np.min(sample_rewards))
-    # rewards_normalize = sample_rewards / np.sum(sample_rewards)
     eta_hat = optimize_dual_function(epsilon, rewards_normalize, eta_hat)
     weights = np.exp(rewards_normalize / eta_hat)
-    policy.update_em(theta_samples, weights)
+    policy.update_wml(theta_samples, weights)
     print(eta_hat)
     print("episode {}, reward {}".format(j, np.mean(sample_rewards)))
     #

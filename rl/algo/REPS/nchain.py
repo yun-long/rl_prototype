@@ -2,7 +2,7 @@ from rl.featurizer.one_hot_featurizer import OneHotFeaturizer
 from rl.policy.value_estimator import ValueEstimator
 from rl.sampler.standard_sampler import StandardSampler
 from rl.misc.dual_function import *
-from rl.misc.plot_rewards import plot_trail_episode_rewards
+from rl.misc.plot_rewards import plot_tr_ep_rs
 from rl.misc.plot_value import plot_2D_value
 from rl.policy.discrete_policy import DistributionPolicy
 #
@@ -64,4 +64,4 @@ if __name__ == '__main__':
     #
     plot_2D_value(env, value_fn, show=True)
     #
-    plot_trail_episode_rewards(trail_rewards, show=False)
+    plot_tr_ep_rs(trail_rewards, show=False)

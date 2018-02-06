@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from rl.env.ball_throw import Pend2dBallThrowDMP
 from rl.policy.gp_constant_mean import GPConstantMean
-from rl.misc.plot_rewards import plot_coeff_trail_episode_rewards
+from rl.misc.plot_rewards import plot_coeff_tr_ep_rs
 import time
 
 env = Pend2dBallThrowDMP()
@@ -26,10 +26,13 @@ for l in range(len(lambda_coeff)):
             for i in range(numSamples):
                 rewards[i] = env.getReward(theta_samples[i, :])
             meanReward[j, k, l] = np.mean(rewards)
+            # compute weights for EM
+            beta = lambda_coeff[l] / (np.max(rewards) - np.min(rewards))
+            weights = np.exp((rewards - np.max(rewards)) * beta)
+            weights = weights / sum(weights)
             #
-            policy.update_wml(lambda_coeff=lambda_coeff[l],
-                              theta_samples=theta_samples,
-                              advantages=rewards)
+            policy.update_wml(theta_samples=theta_samples,
+                              weights=weights)
             #
             buf = ('Lambda ' + str(lambda_coeff[l]) + ' - Trial ' + str(k) +
                     ' - Iteration ' + str(j) + ' - Mean Reward ' + str(meanReward[j,k,l]))
@@ -42,4 +45,4 @@ for l in range(len(lambda_coeff)):
         if k == numTrials -1:
             env.animate_fig(np.random.multivariate_normal(policy.Mu, policy.Sigma), lambda_coeff)
 #
-plot_coeff_trail_episode_rewards(mean_rewards=meanReward, lambda_coeff=lambda_coeff, show=True)
+plot_coeff_tr_ep_rs(mean_rewards=meanReward, lambda_coeff=lambda_coeff, show=True)

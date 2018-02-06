@@ -10,7 +10,7 @@ class GPConstantMean(GaussianPolicy):
         super().__init__()
 
 
-    def _sample_theta(self, num_samples):
+    def sample_theta(self, num_samples):
         """
         Explore in parameter space, used in episode based.
         :param num_samples:
@@ -21,7 +21,7 @@ class GPConstantMean(GaussianPolicy):
                                                       size=num_samples)
         return theta_samples
 
-    def _update_pg(self, alpha_coeff, theta_samples, advantages):
+    def update_pg(self, alpha_coeff, theta_samples, advantages):
         """
         Update the parameters using Policy Gradient method
         :param alpha_coeff: learning rate
@@ -43,17 +43,13 @@ class GPConstantMean(GaussianPolicy):
         self.Mu = self.Mu + alpha_coeff * G[:self.num_dim]
         self.Sigma = self.Sigma + alpha_coeff * np.diag(G[self.num_dim:])
 
-    def _update_wml(self, lambda_coeff, theta_samples, advantages):
+    def update_wml(self, theta_samples, weights):
         """
         Update the paramters using weighted maximum likelihood method
         :param theta_samples:
         :param weights:
         :return:
         """
-        # compute weights for EM
-        beta = lambda_coeff / (np.max(advantages) - np.min(advantages))
-        weights = np.exp((advantages - np.max(advantages)) * beta)
-        weights = weights / sum(weights)
         #
         self.Mu = weights.dot(theta_samples)/np.sum(weights)
         Z = (np.sum(weights)**2-np.sum(weights**2))/np.sum(weights)

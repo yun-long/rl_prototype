@@ -49,7 +49,7 @@ for l, epsilon in enumerate(epsilon_coeffs):
             #
             weights = np.exp(rewards_normalize / eta_hat)
             # update the parameters of the Gaussian policy
-            policy.update_em(theta_samples, weights)
+            policy.update_wml(theta_samples, weights)
             #
             meanReward[j, k, l] = np.mean(rewards)
             buf = ('Lambda ' + str(epsilon) +' - Trial ' + str(k) +

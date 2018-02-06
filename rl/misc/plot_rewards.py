@@ -3,29 +3,29 @@ import numpy as np
 
 plt.style.use('ggplot')
 
-def plot_episode_rewards(episode_rewards, show=True):
+def plot_ep_rewards(ep_rs, show=True):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_xlabel("Iteration")
     ax.set_ylabel("Expected Rewards")
-    ax.plot(episode_rewards)
+    ax.plot(ep_rs)
     if show:
         plt.show()
 
-def plot_trail_episode_rewards(trail_episode_rewards, show=True):
+def plot_tr_ep_rs(tr_ep_rs, show=True):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_xlabel("Iteration")
     ax.set_ylabel("Averaged Expected reward")
-    r_mean = np.mean(trail_episode_rewards, axis=0)
-    r_std = np.std(trail_episode_rewards, axis=0)
-    plt.fill_between(range(trail_episode_rewards.shape[1]), r_mean - r_std, r_mean + r_std, alpha=0.3)
-    plt.plot(range(trail_episode_rewards.shape[1]), r_mean)
+    r_mean = np.mean(tr_ep_rs, axis=0)
+    r_std = np.std(tr_ep_rs, axis=0)
+    plt.fill_between(range(tr_ep_rs.shape[1]), r_mean - r_std, r_mean + r_std, alpha=0.3)
+    plt.plot(range(tr_ep_rs.shape[1]), r_mean)
     if show:
         plt.show()
     return fig
 
-def plot_coeff_trail_episode_rewards(mean_rewards, lambda_coeff, show=True):
+def plot_coeff_tr_ep_rs(mean_rewards, lambda_coeff, show=True):
     fig = plt.figure()
     plt.hold('on')
     ax = fig.add_subplot(111)
