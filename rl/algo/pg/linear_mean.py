@@ -1,48 +1,61 @@
-from gym.envs.classic_control.cartpole import CartPoleEnv
-from gym.envs.toy_text.nchain import NChainEnv
-from rl.featurizer.rbf_featurizer import RBFFeaturizer
-from rl.featurizer.one_hot_featurizer import OneHotFeaturizer
 import numpy as np
+from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
+import matplotlib.pyplot as plt
+#
+from rl.policy.gp_general import GPGeneral
+from rl.featurizer.poly_featurizer import PolyFeaturizer
+from rl.featurizer.rbf_featurizer import RBFFeaturizer
+from rl.misc.utilies import discount_norm_rewards
+#
 
-env = CartPoleEnv()
-# env = NChainEnv()
-num_actions = env.action_space.n
+env = Continuous_MountainCarEnv()
 print("Action space : ", env.action_space)
 print("Observation space : ", env.observation_space)
-f = RBFFeaturizer(env=env, dim_features=10)
-# f = OneHotFeaturizer(env=env)
 
-theta = np.ones((num_actions, f.num_features)) / np.sqrt(num_actions)
-Mu = np.zeros(num_actions * f.num_features)
-Cov = np.eye(num_actions*f.num_features) * 1e-1
+# featurizer = PolyFeaturizer(env=env)
+featurizer = RBFFeaturizer(env)
+gp = GPGeneral(env, featurizer)
+learning_rate = 0.1
 
-num_samples = 100
-num_roll_out = 200
-
-def policy(state, theta):
-    s_feat = f.transform(state)
-    action_prob = np.dot(theta, s_feat)
-    action_prob = np.exp(action_prob) / np.sum(np.exp(action_prob))
-    action = np.random.choice(np.arange(len(action_prob)), p=action_prob)
-    return action
-
-def sample(theta_sample):
-    rewards = []
-    data = []
+def sample(policy):
+    A, Mu_s_theta, Sigma_s_theta, X_s, R = [],[],[],[],[]
     state = env.reset()
     while True:
-        action = policy(state, theta_sample)
+        action, x_s, mu_s_theta, sigma_s_theta = policy.predict(state)
         next_state, reward, done, _ = env.step(action)
-        data.append([state, action, next_state, reward])
-        rewards.append(reward)
+        A.append(action)
+        Mu_s_theta.append(mu_s_theta)
+        Sigma_s_theta.append(sigma_s_theta)
+        X_s.append(x_s)
+        R.append(reward)
         if done:
             break
         state = next_state
-    return rewards, data
+    return np.array(A), np.array(Mu_s_theta), np.array(Sigma_s_theta), np.array(X_s), np.array(R)
 
-for i_episode in range(1000):
-    G, data = sample(theta)
+episode_rewards = []
+for i_episode in range(500):
+    A, Mu_s_theta, Sigma_s_theta, X_s, R = sample(policy=gp)
+    print("\ni_episode : {}, rewards : {}".format(i_episode, np.sum(R)))
+    episode_rewards.append(np.sum(R))
+    R = discount_norm_rewards(rewards=R, gamma=0.99)
+    for t in range(R.shape[0]):
+        print("\r{}/{}".format(t,R.shape[0]),end="")
+        G = R[t]
+        gp.update_mu(A=A[t], Mu_s_theta=Mu_s_theta[t], Sigma_s_theta=Sigma_s_theta[t], X_s=X_s[t], R=G, alpha=learning_rate)
+        # Update sigma 的时候有问题
+        # gp.update_sigma(A=A[t], Mu_s_theta=Mu_s_theta[t], Sigma_s_theta=Sigma_s_theta[t], X_s=X_s[t], R=G, alpha=learning_rate)
 
-    print("i_episode : {}, rewards : {}".format(i_episode, rewards))
-    for s in range(env.observation_space.n):
-        print("state : {}, action : {}".format(s, policy(state=s, theta=theta)))
+state = env.reset()
+while True:
+    action, _, _, _ = gp.predict(state)
+    next_state, reward, done, _ = env.step(action)
+    env.render()
+    if done:
+        break
+    state = next_state
+
+fig = plt.figure()
+plt.plot(episode_rewards)
+plt.show()
+

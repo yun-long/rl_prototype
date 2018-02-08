@@ -29,7 +29,7 @@ class PolyFeaturizer(object):
     def transform(self, state):
         state = np.reshape(state, (-1, self.obs_dims))
         state = self.normalizer(state)
-        phi = PolynomialFeatures(degree=self.degree).fit_transform(state)
+        phi = PolynomialFeatures(degree=self.degree).fit_transform(state).reshape((self.num_features,))
         return phi
 
     def plot_1dim(self, ax, x, y):

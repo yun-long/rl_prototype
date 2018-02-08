@@ -22,7 +22,6 @@ class RBFFeaturizer(object):
         norm_state = self.normalizer(state)
         centers = np.array([i * (self.norm_high-self.norm_low) / (self.dim_features-1) + self.norm_low for i in range(self.dim_features)])
         phi = np.exp(-self.beta*(norm_state - centers) ** 2).reshape(self.num_features)
-        # print(phi.shape)
         return phi
 
     def plot_1dim(self, ax, x, y):

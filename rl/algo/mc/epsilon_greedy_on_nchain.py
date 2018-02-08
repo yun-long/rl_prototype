@@ -1,4 +1,4 @@
-from rl.policy import EpsilonGreedyPolicy
+from rl.policy.discrete_policy import EpsilonGreedyPolicy
 from rl.misc.plotting import plot_value_function
 from rl.misc.utilies import fig_to_image
 from gym.envs.toy_text.nchain import NChainEnv

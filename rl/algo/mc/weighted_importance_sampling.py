@@ -1,7 +1,7 @@
 import numpy as np
 from collections import defaultdict
 from gym.envs.toy_text.nchain import NChainEnv
-from rl.policy import RandomPolicy, GreedyPolicy
+from rl.policy.discrete_policy import RandomPolicy, GreedyPolicy
 #
 # env = BlackjackEnv()
 env = NChainEnv()
@@ -50,5 +50,5 @@ def mc_control_importance_sampling(env, num_episodes, behavior_policy, discount_
 
 #
 random_policy = RandomPolicy(env)
-Q, policy = mc_control_importance_sampling(env, num_episodes=500000, behavior_policy=random_policy,)
+Q, policy = mc_control_importance_sampling(env, num_episodes=500000, behavior_policy=random_policy,discount_factor=1.0)
 
