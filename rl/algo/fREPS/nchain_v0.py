@@ -2,8 +2,8 @@ from rl.featurizer.one_hot_featurizer import OneHotFeaturizer
 from rl.policy.value_estimator import ValueEstimator
 from rl.policy.discrete_policy import DistributionPolicy
 from rl.sampler.standard_sampler import StandardSampler
-from rl.misc.dual_function import optimize_fdual_fn, optimize_dual_fn_paramv
-from rl.misc.plot_rewards import plot_tr_ep_rs, plot_coeff_tr_ep_rs
+from rl.misc.dual_function import optimize_fdual_fn_v0, optimize_dual_fn_paramv
+from rl.misc.plot_rewards import plot_coeff_tr_ep_rs
 from rl.misc.plot_value import plot_2D_value
 from gym.envs.toy_text.nchain import NChainEnv
 
@@ -36,7 +36,7 @@ def f_reps(val_fn, pol_fn, sampler, num_ep, num_sp, alpha):
             pol_fn.update_reps(A=A, param_eta=eta0, param_v=v, g=g, keys=sa_pairs)
             val_fn.update(new_param_v=v)
         else:
-            lamda, v, A, fcp = optimize_fdual_fn(rewards=rewards,
+            lamda, v, A, fcp = optimize_fdual_fn_v0(rewards=rewards,
                                   features_diff=feat_diff,
                                   sa_n=sa_pair_n,
                                   eta=eta0,

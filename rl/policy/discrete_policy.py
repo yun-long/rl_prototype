@@ -41,10 +41,16 @@ class DistributionPolicy(object):
         pi_new /= np.sum(pi_new, axis=1, keepdims=True)
         self.pi = pi_new
 
-    def update_freps(self, A, eta, param_lamda, param_v, keys, fcp):
+    def update_freps(self, A, eta, param_lamda, param_v, keys, fcp, param_kappa=None):
         adv_sa = param_lamda * np.ones((self.env.observation_space.n, self.env.action_space.n))
         adv_sa[tuple(zip(*keys))] = A(param_v)
-        y = (adv_sa - param_lamda) / eta
+        if param_kappa is not None:
+            kappa = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+            kappa[tuple(zip(*keys))] = param_kappa
+            y = (adv_sa - param_lamda + kappa) / eta
+        else:
+            y = (adv_sa - param_lamda) / eta
+        #
         weights = fcp(y)
         pi_new = np.copy(self.pi)
         pi_new *= weights
