@@ -40,7 +40,7 @@ class StandardSampler(object):
             features_diff[state_action] += featurizer.transform(transition.next_state) \
                                            - featurizer.transform(transition.state)
         sa_pairs, r_array, features_diff_array, sa_pairs_n = [], [], [], []
-        for key, value in n.items():
+        for key in sorted(n.keys()):
             sa_pairs_n.append(n[key])
             sa_pairs.append(key)
             r_array.append(r[key] / n[key])

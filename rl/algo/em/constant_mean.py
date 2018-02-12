@@ -45,4 +45,4 @@ for l in range(len(lambda_coeff)):
         if k == numTrials -1:
             env.animate_fig(np.random.multivariate_normal(policy.Mu, policy.Sigma), lambda_coeff)
 #
-plot_coeff_tr_ep_rs(mean_rewards=meanReward, lambda_coeff=lambda_coeff, show=True)
+plot_coeff_tr_ep_rs(mean_rewards=meanReward, coeff=lambda_coeff, show=True)

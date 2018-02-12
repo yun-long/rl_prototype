@@ -25,20 +25,21 @@ def plot_tr_ep_rs(tr_ep_rs, show=True):
         plt.show()
     return fig
 
-def plot_coeff_tr_ep_rs(mean_rewards, lambda_coeff, show=True):
+def plot_coeff_tr_ep_rs(mean_rewards, coeff, label=r'$\alpha$ = ',show=True):
     fig = plt.figure()
-    plt.hold('on')
+    # plt.hold('on')
     ax = fig.add_subplot(111)
     ax.set_xlabel('Iteration')
     ax.set_ylabel('Average reward')
-    c = ['b', 'm', 'r']
+    # c = ['b', 'm', 'r']
 
-    for l in range(len(lambda_coeff)):
-        logRew = -np.log(-mean_rewards)
+    for l in range(len(coeff)):
+        # logRew = -np.log(-mean_rewards)
+        logRew = mean_rewards
         r_mean = np.mean(logRew[:,:,l],axis=1)
         r_std = np.std(logRew[:,:,l],axis=1)
-        plt.fill_between(range(mean_rewards.shape[0]), r_mean - r_std, r_mean + r_std, alpha=0.3, color=c[l])
-        plt.plot(range(mean_rewards.shape[0]), r_mean, color=c[l], label='$\lambda$ = ' + str(lambda_coeff[l]))
+        plt.fill_between(range(mean_rewards.shape[0]), r_mean - r_std, r_mean + r_std, alpha=0.3)
+        plt.plot(range(mean_rewards.shape[0]), r_mean, label=label + str(coeff[l]))
     plt.legend(loc='lower right')
     if show:
         plt.show()

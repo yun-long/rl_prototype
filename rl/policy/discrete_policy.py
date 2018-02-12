@@ -32,7 +32,7 @@ class DistributionPolicy(object):
         action = np.random.choice(np.arange(len(action_prob)), p=action_prob)
         return action
 
-    def update(self, A, param_eta, param_v, g, keys):
+    def update_reps(self, A, param_eta, param_v, g, keys):
         adv_sa = g * np.ones((self.env.observation_space.n, self.env.action_space.n))
         adv_sa[tuple(zip(*keys))] = A(param_v)
         weights = np.exp((adv_sa-np.max(adv_sa))/param_eta)
@@ -41,6 +41,15 @@ class DistributionPolicy(object):
         pi_new /= np.sum(pi_new, axis=1, keepdims=True)
         self.pi = pi_new
 
+    def update_freps(self, A, eta, param_lamda, param_v, keys, fcp):
+        adv_sa = param_lamda * np.ones((self.env.observation_space.n, self.env.action_space.n))
+        adv_sa[tuple(zip(*keys))] = A(param_v)
+        y = (adv_sa - param_lamda) / eta
+        weights = fcp(y)
+        pi_new = np.copy(self.pi)
+        pi_new *= weights
+        pi_new /= np.sum(pi_new, axis=1, keepdims=True)
+        self.pi = pi_new
 
 class GreedyPolicy(object):
     def __init__(self, env, Q):

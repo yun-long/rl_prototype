@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 import scipy as sp
 from scipy import optimize
-# import cvxpy as cvx
+import cvxopt as cvx
 import json
 
 
@@ -768,7 +768,8 @@ def f_pi(env, pi, f_div, A, sa_keys, eta, th, lam):
   A_SA = lam * np.ones((env.nS, env.nA))
   # For visited (s,a) pairs, use computed advantage
   A_SA[tuple(zip(*sa_keys))] = A(th)
-
+  y = fcp((A_SA - lam) / eta)
+  # print(np.min(y))
   # Update policy
   pi_new = np.copy(pi)
   pi_new *= fcp((A_SA - lam) / eta)
@@ -818,6 +819,7 @@ def sim_f(env, etaf, phi, seeds, alphas, n_sim, n_iter, n_steps, **kwargs):
           t0 = t1
         # Next step
         pi = pi_new
+        # print(pi)
       sim_ensemble.append(sim_traj)
     sim_orchestra[alpha] = sim_ensemble
   return sim_orchestra

@@ -58,10 +58,10 @@ ff_0 = lambda y : -np.log(1-y)
 f_1 = lambda x : x * np.log(x) - (x-1)
 ff_1 = lambda y : np.exp(y) - 1
 
-def alpha_fn(alpha):
-    if alpha == 0:
+def alpha_fn(alpha=1.0):
+    if alpha == 0.:
         return f_0
-    elif alpha == 1:
+    elif alpha == 1.:
         return f_1
     f = lambda x : ((np.power(x, alpha) - 1) - alpha* (x-1) ) / (alpha * (alpha - 1))
     return f

@@ -2,7 +2,7 @@ from rl.featurizer.one_hot_featurizer import OneHotFeaturizer
 from rl.policy.value_estimator import ValueEstimator
 from rl.sampler.standard_sampler import StandardSampler
 from rl.misc.dual_function import *
-from rl.misc.plot_rewards import plot_tr_ep_rs
+from rl.misc.plot_rewards import plot_tr_ep_rs, plot_coeff_tr_ep_rs
 from rl.misc.plot_value import plot_2D_value
 from rl.policy.discrete_policy import DistributionPolicy
 #
@@ -23,15 +23,18 @@ def reps_step_based(val_featurizer, policy, sampler, num_episodes, param_eta0, p
                                                              init_v=param_v0,
                                                              epsilon=epsilon,
                                                              sa_n=sa_n)
-        policy.update(A=A,param_eta=param_eta, param_v=param_v, g=g, keys=keys)
+        policy.update_reps(A=A,param_eta=param_eta, param_v=param_v, g=g, keys=keys)
         value_fn.update(new_param_v=param_v)
         episodes_rewards.append(mean_reward)
-        print("\rEpisode {}, Expected Return {}.".format(i_episode, mean_reward))
+        print("\repsilon {}, Trail {}, Episode {}, Expected Return {}.".format(epsilon,
+                                                                               i_trail,
+                                                                               i_episode,
+                                                                               mean_reward))
     return episodes_rewards
 
 if __name__ == '__main__':
     #
-    env = NChainEnv(n=5)
+    env = NChainEnv(n=5, slip=0.1)
     print("Action Space : ", env.action_space)
     print("Observation Space : ", env.observation_space)
     # define featurizer for value function
@@ -40,28 +43,31 @@ if __name__ == '__main__':
     sampler = StandardSampler(env)
     #
     # initialization paramteres for dual function
-    epsilon = 0.1
+    epsilons = [0.1, 0.5, 0.9]
     #
     num_trails = 10
-    num_episodes = 50
-    trail_rewards = np.zeros((num_trails, num_episodes))
-    for i_trail in range(num_trails):
-        # define value function
-        value_fn = ValueEstimator(featurizer=val_featurizer)
-        # define policy
-        policy = DistributionPolicy(env)
-        param_eta0 = 5.0
-        param_v0 = value_fn.param_v0
-        #
-        reward = reps_step_based(val_featurizer=val_featurizer,
-                                 policy = policy,
-                                 sampler=sampler,
-                                 num_episodes=num_episodes,
-                                 param_eta0=param_eta0,
-                                 param_v0=param_v0,
-                                 epsilon=epsilon)
-        trail_rewards[i_trail, :] = reward
+    num_episodes = 30
+    mean_rewards = np.zeros((num_episodes, num_trails, len(epsilons)))
     #
-    plot_2D_value(env, value_fn, show=True)
+    for i_eps, epsilon in enumerate(epsilons):
+        for i_trail in range(num_trails):
+            # define value function
+            value_fn = ValueEstimator(featurizer=val_featurizer)
+            # define policy
+            policy = DistributionPolicy(env)
+            param_eta0 = 5.0
+            param_v0 = value_fn.param_v0
+            #
+            reward = reps_step_based(val_featurizer=val_featurizer,
+                                     policy = policy,
+                                     sampler=sampler,
+                                     num_episodes=num_episodes,
+                                     param_eta0=param_eta0,
+                                     param_v0=param_v0,
+                                     epsilon=epsilon)
+            mean_rewards[:, i_trail, i_eps ] = reward
     #
-    plot_tr_ep_rs(trail_rewards, show=False)
+    # plot_2D_value(env, value_fn, show=True)
+    #
+    # plot_tr_ep_rs(trail_rewards, show=True)
+    plot_coeff_tr_ep_rs(mean_rewards, coeff=epsilons, label=r'$\epsilon$ = ', show=True)

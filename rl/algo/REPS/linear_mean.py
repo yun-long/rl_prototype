@@ -17,6 +17,7 @@ import numpy as np
 # env = Continuous_MountainCarEnv()
 # env = PendulumEnv()
 env = RandomJumpEnv()
+
 #
 print("Action space : ", env.action_space)
 print("Action space low : ", env.action_space.low)
@@ -61,4 +62,5 @@ for i_trail in range(num_trails):
         mean_rewards[i_trail, i_episode] = np.mean(rewards)
 #
 plot_tr_ep_rs(mean_rewards,show=True)
+
 
