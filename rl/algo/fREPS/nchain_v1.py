@@ -87,6 +87,6 @@ if __name__ == '__main__':
             mean_rewards[:, i_trial, i_alpha] = episodes_rewards
     # plot_tr_ep_rs(mean_rewards, show=True)
     plot_coeff_tr_ep_rs(mean_rewards, alphas, label=r'$\alpha$ = ',show=True)
-    # plot_2D_value(env=env, value_fn=val_fn, show=True)
+    plot_2D_value(env=env, value_fn=val_fn, show=True)
 
 

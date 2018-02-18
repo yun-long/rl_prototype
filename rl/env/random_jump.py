@@ -11,8 +11,8 @@ class RandomJumpEnv(gym.Env):
     }
 
     def __init__(self):
-        self.min_action = -np.inf
-        self.max_action = np.inf
+        self.min_action = -1.0
+        self.max_action = 1.0
         self.min_position = -1.2
         self.max_position = 0.60
         self.goal_position = 0.4
@@ -48,10 +48,10 @@ class RandomJumpEnv(gym.Env):
         done = bool(position >= (self.goal_position-0.05) and position <= (self.goal_position+0.05))
         #
         # cost = np.square(self.goal_position - position)
-        cost = np.square(self.goal_position - position) + np.square(force)
+        cost = np.square(self.goal_position - position) + np.square(action[0])
         reward = -cost
         if done:
-            reward = 100
+            reward = 10
         # reward = np.atleast_1d(reward)
         self.state = [min(max(position, self.min_position), self.max_position)]
         #

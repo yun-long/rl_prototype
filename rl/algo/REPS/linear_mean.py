@@ -9,6 +9,7 @@ from rl.misc.dual_function import optimize_dual_fn
 from rl.sampler.standard_sampler import StandardSampler
 from rl.env.random_jump import RandomJumpEnv
 from rl.misc.plot_rewards import plot_tr_ep_rs
+from rl.misc.plot_value import plot_2D_value
 #
 #
 from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
@@ -33,13 +34,14 @@ val_featurizer = PolyFeaturizer(env, degree=2)
 sampler = StandardSampler(env)
 # Number of episodes
 num_episodes = 50
-num_trails = 2
+num_trails = 10
 num_samples = 500
 #
 epsilon = 1.0
 #
 mean_rewards = np.zeros((num_trails, num_episodes))
 for i_trail in range(num_trails):
+    rnd = np.random.RandomState(seed=43225801)
     #
     policy = GPLinearMean(env, pol_featurizer)
     value = ValueEstimator(val_featurizer)
@@ -53,7 +55,7 @@ for i_trail in range(num_trails):
         rewards, val_feat_diff, A, Phi = sampler.process_data(data_set, pol_featurizer, val_featurizer)
         #
         eta, v, weights = optimize_dual_fn(rewards=rewards, features_diff=val_feat_diff,
-                                                 init_eta=eta0, init_v=v0, epsilon=epsilon)
+                                                 init_eta=eta0, epsilon=epsilon, rnd=rnd)
         # Update policy
         policy.update_wml(Weights=weights, Phi=Phi, A=A)
         # update value function

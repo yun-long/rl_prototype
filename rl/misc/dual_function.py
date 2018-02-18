@@ -24,7 +24,9 @@ def dual_fn_v0(rewards, features_diff, epsilon, N, inputs):
     grad_v = Z.dot(features_diff) / np.sum(Z)
     return g, np.hstack([grad_eta, grad_v])
 
-def optimize_dual_fn(rewards, features_diff, init_eta, init_v, epsilon):
+def optimize_dual_fn(rewards, features_diff, init_eta, epsilon, rnd):
+    n_v = features_diff.shape[1]
+    init_v = rnd.randn(n_v)
     N = rewards.shape[0]
     x0 = np.hstack([init_eta, init_v])
     bounds = [(-np.inf, np.inf) for _ in x0]
@@ -265,10 +267,62 @@ def optimize_fdual_fn_v1(rewards, features_diff, sa_n, eta, alpha, rnd):
 
 
 # # ===================== fREPS dual function version 2, for continuous case ===================
+def alpha_fn_x0_v2(alpha, A, eta, n_v, rnd):
+    v0 = rnd.randn(n_v)
+    A0 = A(v0)
+    if alpha > 1.:
+        lam0 = np.min(A0) + eta / (alpha - 1) - 1
+    elif alpha < 1.:
+        lam0 = np.max(A0) - eta / (1-alpha) + 1
+    else:
+        lam0 = np.mean(A0)
+    return np.r_[v0, lam0]
 
 
-def optimize_fdual_fn_v2(rewards, features_diff, init_eta, init_v):
-    pass
+def f_dual_v2(A, features_diff, eta, alpha):
+    _, _, fcp, fc = alpha_fn(alpha)
+    def dual(inputs):
+        param_v = inputs[:-1]
+        param_lam = inputs[-1]
+        y = (A(param_v) - param_lam) / eta
+        w = fcp(y)
+        g = eta * np.average(fc(y)) + param_lam
+        dg_v = np.average(np.diag(w) @ features_diff, axis=0)
+        dg_lam = -np.average(w) + 1.0
+        return g, np.r_[dg_v, dg_lam]
+    return dual
+
+def optimize_fdual_fn_v2(rewards, features_diff, init_eta, alpha, rnd):
+    n_v = features_diff.shape[1]
+    A = lambda v: rewards + np.dot(features_diff, v)
+    #
+    opt_fn = f_dual_v2(A, features_diff, init_eta, alpha)
+    #
+    eps = 1e-4 # slack in the constraint
+    y = lambda x : (A(x[:-1]) - x[-1]) / init_eta
+    #
+    dcons = (alpha - 1) * np.hstack((features_diff, -np.ones((features_diff.shape[0], 1)))) / init_eta
+    cons = (
+        {  # 1 + (alpha - 1) * y - eps > 0
+            'type': 'ineq',
+            'fun': lambda x: 1 + (alpha - 1) * y(x) - eps,
+            'jac': lambda x: dcons
+        }
+    )
+    success = False
+    while not success:
+        x0 = alpha_fn_x0_v2(alpha, A, init_eta, n_v, rnd)
+        results = minimize(opt_fn, x0=x0, constraints=cons, **dual_opts)
+        success = results.success
+        if not success:
+            print("Optimization failed! \n")
+            print(results)
+    #
+    _, _, fcp, fc = alpha_fn(alpha)
+    v = results.x[:-1]
+    lamda = results.x[-1]
+    weights = fcp(y(results.x))
+    return lamda, v, weights
 
 
 

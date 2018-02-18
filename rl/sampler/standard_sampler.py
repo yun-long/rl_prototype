@@ -19,6 +19,7 @@ class StandardSampler(object):
         state = self.env.reset()
         mean_reward = []
         for i in range(N):
+        # while True:
             action = policy.predict_action(state)
             next_state, reward, done, _ = self.env.step(action)
             data.append(Transition(state=state,
@@ -28,6 +29,7 @@ class StandardSampler(object):
             mean_reward.append(reward)
             if done:
                 next_state = self.env.reset()
+                # break
             state = next_state
         return data, np.mean(mean_reward)
 
