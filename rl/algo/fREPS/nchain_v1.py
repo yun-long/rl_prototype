@@ -1,3 +1,6 @@
+"""
+fREPS
+"""
 from rl.featurizer.one_hot_featurizer import OneHotFeaturizer
 from rl.policy.value_estimator import ValueEstimator
 from rl.policy.discrete_policy import DistributionPolicy

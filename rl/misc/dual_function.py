@@ -264,9 +264,11 @@ def optimize_fdual_fn_v1(rewards, features_diff, sa_n, eta, alpha, rnd):
     return v, lamda, kappa, A, fcp
 
 
+# # ===================== fREPS dual function version 2, for continuous case ===================
 
 
-
+def optimize_fdual_fn_v2(rewards, features_diff, init_eta, init_v):
+    pass
 
 
 

@@ -32,6 +32,12 @@ class StandardSampler(object):
         return data, np.mean(mean_reward)
 
     def count_data(self, data, featurizer):
+        """
+        For REPS discrete case
+        :param data:
+        :param featurizer:
+        :return:
+        """
         n, r, features_diff = defaultdict(float), defaultdict(float), defaultdict(float)
         for t_i, transition in enumerate(data):
             state_action = (transition.state, transition.action)
@@ -48,6 +54,13 @@ class StandardSampler(object):
         return np.array(r_array), np.array(features_diff_array), np.array(sa_pairs_n), sa_pairs
 
     def process_data(self, data, pol_featurizer, val_featurizer):
+        """
+        For REPS continuous case
+        :param data:
+        :param pol_featurizer:
+        :param val_featurizer:
+        :return:
+        """
         N = len(data)
         rewards, val_feat_diff = [],[]
         actions, pol_feat = [], []
