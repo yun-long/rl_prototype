@@ -3,6 +3,7 @@ An implementation of f-REPS on random jumpy environment, Gaussian policy, linear
 """
 from rl.policy.gp_linear_mean import GPLinearMean
 from rl.featurizer.non_featurizer import NoneFeaturizer
+from rl.featurizer.rbf_featurizer import RBFFeaturizer
 from rl.featurizer.poly_featurizer import PolyFeaturizer
 from rl.policy.value_estimator import ValueEstimator
 from rl.misc.dual_function import optimize_fdual_fn_v2, optimize_dual_fn
@@ -13,9 +14,11 @@ from rl.misc.plot_value import plot_2D_value
 #
 import numpy as np
 from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
+from gym.envs.classic_control.pendulum import PendulumEnv
 #
 env = RandomJumpEnv()
 # env = Continuous_MountainCarEnv()
+# env = PendulumEnv()
 #
 print("Action space : ", env.action_space)
 print("Action space low : ", env.action_space.low)
@@ -25,6 +28,8 @@ print("Observation space low : ", env.observation_space.low)
 print("Observation space high : ", env.observation_space.high)
 #
 pol_featurizer = NoneFeaturizer(env)
+# pol_featurizer = RBFFeaturizer(env, dim_features=10)
+# pol_featurizer.plot_examples()
 #
 val_featurizer = PolyFeaturizer(env, degree=2)
 #
@@ -65,8 +70,9 @@ for i_alpha, alpha in enumerate(alphas):
             #
             print("alpha : {}, Trails : {}, Episode : {}, Reward : {}".format(alpha, i_trail, i_episode, mean_rs))
             mean_rewards[i_episode, i_trail, i_alpha] = mean_rs
+        # policy.optimal_policy_demo(num_demos=1)
         #
 
 plot_2D_value(env, value, conti=True)
 #
-plot_coeff_tr_ep_rs(mean_rewards=mean_rewards, coeff=alphas)
+plot_coeff_tr_ep_rs(mean_rewards=mean_rewards, coeff=alphas, logR=True)

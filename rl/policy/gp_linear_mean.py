@@ -13,7 +13,7 @@ class GPLinearMean(GaussianPolicy):
         self.featurizer = featurizer
         #
         self.Mu_theta = np.random.randn(self.num_features, self.num_actions) / np.sqrt(self.num_features)
-        self.Sigma_action = np.eye(self.num_actions) * 1e4 # for exploration in parameter space
+        self.Sigma_action = np.eye(self.num_actions) * 1e1 # for exploration in parameter space
         super().__init__()
 
     def predict_action(self, state):
@@ -64,4 +64,5 @@ class GPLinearMean(GaussianPolicy):
                 if done:
                     time.sleep(1)
                     break
+        self.env.render(close=True)
 

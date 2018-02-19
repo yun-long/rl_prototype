@@ -26,7 +26,7 @@ def plot_tr_ep_rs(tr_ep_rs, show=True):
         plt.show()
     return fig
 
-def plot_coeff_tr_ep_rs(mean_rewards, coeff, label=r'$\alpha$ = ',show=True):
+def plot_coeff_tr_ep_rs(mean_rewards, coeff, label=r'$\alpha$ = ', logR = False, show=True):
     fig = plt.figure()
     # plt.hold('on')
     ax = fig.add_subplot(111)
@@ -35,8 +35,10 @@ def plot_coeff_tr_ep_rs(mean_rewards, coeff, label=r'$\alpha$ = ',show=True):
     # c = ['b', 'm', 'r']
 
     for l in range(len(coeff)):
-        # logRew = -np.log(-mean_rewards)
-        logRew = mean_rewards
+        if logR:
+            logRew = -np.log(-mean_rewards)
+        else:
+            logRew = mean_rewards
         r_mean = np.mean(logRew[:,:,l],axis=1)
         r_std = np.std(logRew[:,:,l],axis=1)
         plt.fill_between(range(mean_rewards.shape[0]), r_mean - r_std, r_mean + r_std, alpha=0.3)
