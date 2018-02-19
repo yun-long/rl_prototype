@@ -2,7 +2,7 @@
 fREPS
 """
 from rl.featurizer.one_hot_featurizer import OneHotFeaturizer
-from rl.policy.value_estimator import ValueEstimator
+from rl.value.value_estimator import ValueEstimator
 from rl.policy.discrete_policy import DistributionPolicy
 from rl.sampler.standard_sampler import StandardSampler
 from rl.misc.dual_function import optimize_fdual_fn_v1, optimize_dual_fn_paramv
@@ -12,7 +12,7 @@ from gym.envs.toy_text.nchain import NChainEnv
 
 #
 import numpy as np
-import matplotlib.pyplot as plt
+
 
 def f_reps(val_fn, pol_fn, sampler, num_ep, num_sp, alpha):
     # env.seed(seed=147691)

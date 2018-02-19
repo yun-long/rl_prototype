@@ -1,6 +1,10 @@
+"""
+Gaussian policy, Convolutional neural network policy
+"""
+
 import numpy as np
 
-class CNN(object):
+class NNCNN(object):
 
     def __init__(self):
         pass

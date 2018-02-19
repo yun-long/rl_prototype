@@ -137,11 +137,11 @@ while True:
                 grad_buffer[k] = np.zeros_like(v)
         # boring book-keeping
         running_reward = reward_sum if running_reward is None else running_reward * 0.99 + reward_sum * 0.01
-        print('resetting env. episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
-        for state in range(num_states):
-            features_x = featurizer(state)
-            test_aprob, _ = policy_forward(features_x)
-            print("state ", state, "action ", test_aprob)
+        # print('resetting env. episode reward total was %f. running mean: %f' % (reward_sum, running_reward))
+        # for state in range(num_states):
+        #     features_x = featurizer(state)
+        #     test_aprob, _ = policy_forward(features_x)
+        #     print("state ", state, "action ", test_aprob)
         reward_sum = 0
         observation = env.reset()
 

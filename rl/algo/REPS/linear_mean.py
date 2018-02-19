@@ -4,15 +4,13 @@ An implementation of REPS on Random Jumpy Environment, Gaussian Policy, Linear m
 from rl.policy.gp_linear_mean import GPLinearMean
 from rl.featurizer.non_featurizer import NoneFeaturizer
 from rl.featurizer.poly_featurizer import PolyFeaturizer
-from rl.policy.value_estimator import ValueEstimator
+from rl.value.value_estimator import ValueEstimator
 from rl.misc.dual_function import optimize_dual_fn
 from rl.sampler.standard_sampler import StandardSampler
 from rl.env.random_jump import RandomJumpEnv
 from rl.misc.plot_rewards import plot_tr_ep_rs
-from rl.misc.plot_value import plot_2D_value
 #
 #
-from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
 import numpy as np
 #
 # env = Continuous_MountainCarEnv()

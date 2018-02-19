@@ -3,18 +3,16 @@ An implementation of f-REPS on random jumpy environment, Gaussian policy, linear
 """
 from rl.policy.gp_linear_mean import GPLinearMean
 from rl.featurizer.non_featurizer import NoneFeaturizer
-from rl.featurizer.rbf_featurizer import RBFFeaturizer
 from rl.featurizer.poly_featurizer import PolyFeaturizer
-from rl.policy.value_estimator import ValueEstimator
+from rl.value.value_estimator import ValueEstimator
 from rl.misc.dual_function import optimize_fdual_fn_v2, optimize_dual_fn
 from rl.sampler.standard_sampler import StandardSampler
 from rl.env.random_jump import RandomJumpEnv
-from rl.misc.plot_rewards import plot_tr_ep_rs, plot_coeff_tr_ep_rs
+from rl.misc.plot_rewards import plot_coeff_tr_ep_rs
 from rl.misc.plot_value import plot_2D_value
 #
 import numpy as np
-from gym.envs.classic_control.continuous_mountain_car import Continuous_MountainCarEnv
-from gym.envs.classic_control.pendulum import PendulumEnv
+
 #
 env = RandomJumpEnv()
 # env = Continuous_MountainCarEnv()

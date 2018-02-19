@@ -1,3 +1,8 @@
+"""
+Gaussin policy, constant mean, constant variance
+
+Reference: Jan Peters, A Survey on policy search for robotics
+"""
 import numpy as np
 from rl.policy.base import GaussianPolicy
 
