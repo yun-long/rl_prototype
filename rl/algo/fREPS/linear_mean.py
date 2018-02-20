@@ -34,16 +34,21 @@ val_featurizer = PolyFeaturizer(env, degree=2)
 sampler = StandardSampler(env)
 #
 num_episodes = 50
-num_trials = 10
+num_trials = 1
 num_samples = 1000
 #
 alphas = [-10., -5., -2., 0., 1.]
 #
+
+policy_initial = GPLinearMean(env, pol_featurizer)
+mu_theta = policy_initial.Mu_theta
+
 mean_rewards = np.zeros(shape=(num_episodes, num_trials, len(alphas)))
 for i_alpha, alpha in enumerate(alphas):
     for i_trail in range(num_trials):
         #
         policy = GPLinearMean(env, pol_featurizer)
+        policy.Mu_theta = mu_theta
         value = ValueEstimator(val_featurizer)
         #
         eta0 = 5.0
@@ -52,15 +57,16 @@ for i_alpha, alpha in enumerate(alphas):
         rnd = np.random.RandomState(seed=43225801)
         env.seed(seed=147691)
         for i_episode in range(num_episodes):
+            eta0 *= 0.95
             #
             sample_data, mean_rs = sampler.sample_data(policy=policy, N=num_samples)
             #
             rewards, val_feat_diff, Actions, Phi = sampler.process_data(sample_data, pol_featurizer, val_featurizer)
             #
-            if alpha == 1.:
-                opt_eta, opt_v, weights = optimize_dual_fn(rewards, val_feat_diff, eta0, epsilon, rnd)
-            else:
-                opt_lamda, opt_v, weights = optimize_fdual_fn_v2(rewards, val_feat_diff, eta0, alphas[i_alpha], rnd)
+            # if alpha == 1.:
+            #     opt_eta, opt_v, weights = optimize_dual_fn(rewards, val_feat_diff, eta0, epsilon, rnd)
+            # else:
+            opt_lamda, opt_v, weights = optimize_fdual_fn_v2(rewards, val_feat_diff, eta0, alphas[i_alpha], rnd)
             # update policy
             policy.update_wml(weights, Phi, Actions)
             #
@@ -73,4 +79,4 @@ for i_alpha, alpha in enumerate(alphas):
 
 plot_2D_value(env, value, conti=True)
 #
-plot_coeff_tr_ep_rs(mean_rewards=mean_rewards, coeff=alphas, logR=True)
+plot_coeff_tr_ep_rs(mean_rewards=mean_rewards, coeff=alphas, logR=False)

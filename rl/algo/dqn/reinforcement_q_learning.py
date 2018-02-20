@@ -46,7 +46,7 @@ First, let's import needed packages. Firstly, we need
 (Install using `pip install gym`).
 We'll also use the following from PyTorch:
 
--  neural networks (``torch.nn``)
+-  neural networks (``torch.layers``)
 -  optimization (``torch.optim``)
 -  automatic differentiation (``torch.autograd``)
 -  utilities for vision tasks (``torchvision`` - `a separate

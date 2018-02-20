@@ -39,3 +39,14 @@ def softmax(x):
     return e_x / e_x.sum()
 
 
+def print_envinfo(env, disc_a=False, disc_s=False):
+    # np.random.seed(1234)
+    # env.seed(1234)
+    print("Action space : ", env.action_space)
+    if not disc_a:
+        print("Action space low : ", env.action_space.low)
+        print("Action space high: ", env.action_space.high)
+    print("Observation space : ", env.observation_space)
+    if not disc_s:
+        print("Observation space low : ", env.observation_space.low)
+        print("Observation space high: ", env.observation_space.high)

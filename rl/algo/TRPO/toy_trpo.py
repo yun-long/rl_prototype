@@ -1,4 +1,4 @@
-from rl.policy.gp_fc import GPFC
+from rl.trash.gp_fc import GPFC
 from rl.value.value_fc import ValueFC
 from rl.misc.utilies import discount_norm_rewards
 #
@@ -6,7 +6,6 @@ import itertools
 import numpy as np
 import gym
 import tensorflow as tf
-from gym.envs.classic_control.cartpole import CartPoleEnv
 
 # define the environment
 env = gym.make("Pendulum-v0").unwrapped

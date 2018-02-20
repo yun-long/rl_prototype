@@ -90,7 +90,7 @@ for mu in p_mu:
     image = fig_to_image(fig)
     # frames.append(image)
     # plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-    #            ncol=2, mode="expand", borderaxespad=0.)
+    #            ncol=2, models="expand", borderaxespad=0.)
     # plt.show()
     plt.close("all")
     writer.append_data(image)

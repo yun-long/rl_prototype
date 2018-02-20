@@ -1,0 +1,5 @@
+
+
+class Sequential(object):
+    pass
+
