@@ -4,9 +4,9 @@ from rl.tf.models import MLP
 
 class GaussianPolicy_MLP(object):
 
-    def __init__(self, sess, sizes, activations=None, init_sigma=1.):
+    def __init__(self, sizes, activations=None, sess = None, init_sigma=1.):
         self.mlp = MLP(sizes, activations)
-        self.sess = sess
+        self.sess = sess or tf.get_default_session()
 
         # action tensor (diagonal Gaussian)
         act_dim = sizes[-1]

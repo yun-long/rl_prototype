@@ -3,6 +3,7 @@ from rl.tf.models import MLP
 from rl.env.random_jump import RandomJumpEnv
 #
 import gym
+import time
 import tensorflow as tf
 import numpy as np
 
@@ -57,25 +58,25 @@ def next_batch_idx(batch_size, data_set_size):
     batch_idx_list = np.random.choice(data_set_size, data_set_size, replace=False)
     for batch_start in range(0, data_set_size, batch_size):
         yield batch_idx_list[batch_start: min(batch_start+batch_size, data_set_size)]
-def rollout(env, policy, render=False):
+
+def rollout(env, policy):
     obs = env.reset()
     done = False
     while not done:
-        if render:
-            env.render()
         act = policy(obs)
-        nobs, rwd, done, _ = env.step(np.minimum(np.maximum(act, env.action_space.low), env.action_space.high))
+        nobs, rwd, done, _ = env.step(act)
+        # nobs, rwd, done, _ = env.step(np.minimum(np.maximum(act, env.action_space.low), env.action_space.high))
         yield obs, act, rwd, done
         obs = nobs
 
-def rollouts(env, policy, min_trans, render=False):
+def rollouts(env, policy, min_trans):
     keys = ['obs', 'act', 'rwd', 'done']
     paths = {}
     for k in keys:
         paths[k] = []
     nb_paths = 0
     while len(paths['rwd']) < min_trans:
-        for trans_vect in rollout(env, policy, render):
+        for trans_vect in rollout(env, policy):
             for key, val in zip(keys, trans_vect):
                 paths[key].append(val)
         nb_paths += 1
@@ -94,8 +95,20 @@ def get_gen_adv(paths, v_func, dicount, lam):
         if paths['done'][k]:
             gen_adv[k] = paths['rwd'][k] - v_values[k]
         else:
-            gen_adv[k] = paths['rwd'][k] + dicount * v_values[k+1] - v_values[k] + dicount * lam * gen_adv[k+1]
+            sigma_k = paths['rwd'][k] + dicount * v_values[k+1] - v_values[k]
+            gen_adv[k] = sigma_k + (dicount * lam) * gen_adv[k+1]
     return gen_adv, v_values
+
+def opt_policy_demo(env, policy):
+    obs = env.reset()
+    while True:
+        action = policy(obs)
+        next_obs, reward, done, _ = env.step(action)
+        obs = next_obs
+        env.render()
+        if done:
+            time.sleep(0.5)
+            obs = env.reset()
 
 def main():
     seed = 0
@@ -103,15 +116,15 @@ def main():
     tf.set_random_seed(seed)
     #
     # env = gym.make('MountainCarContinuous-v0')
-    env = RandomJumpEnv()
+    # env = RandomJumpEnv()
+    env = gym.make('Pendulum-v0')
     env.seed(seed)
 
     #
-    n_iter = 1000000
-    min_trans_per_iter = 3200
-    render_every = 100
+    n_iter = 200
+    min_trans_per_iter = 3000
     epochs_per_iter = 15
-    exploration_sigma = 1.5
+    exploration_sigma = 1
     discount = .99
     lam_trace = .95
     epsilon = .2
@@ -125,16 +138,14 @@ def main():
     v_mlp = MLP(layer_sizes + [1], layer_activations + [tf.identity])
     get_v = lambda obs: sess.run(v_mlp.out, {v_mlp.x: obs})
     ppo = PPO(sess, policy, v_mlp, epsilon)
+    #
+    tf.summary.FileWriter("log/", sess.graph)
     sess.run(tf.global_variables_initializer())
     #
     for it in range(n_iter):
         print('------------iter , {}, --------------'.format(it))
-        if (it+1) % render_every == 0:
-            render = True
-        else:
-            render = False
 
-        paths = rollouts(env, policy=policy.predict, min_trans=min_trans_per_iter, render=render)
+        paths = rollouts(env, policy=policy.predict, min_trans=min_trans_per_iter)
         print("averaged rewards: ", np.mean(paths['rwd']))
 
         # update the v-function
@@ -166,8 +177,8 @@ def main():
                               old_log_probas=log_act_probas[batch_idx],
                               advantages=gen_adv[batch_idx])
 
-        print("entropy: before update", sess.run(policy.entropy))
-        print("policy: objective before updating ", ppo.evaluate_pol(paths['obs'], paths['act'], old_log_probas=log_act_probas, advantages=gen_adv))
+        print("entropy: after update", sess.run(policy.entropy))
+        print("policy: objective after updating ", ppo.evaluate_pol(paths['obs'], paths['act'], old_log_probas=log_act_probas, advantages=gen_adv))
         #
         log_act_probas_new = policy.get_log_proba(paths['obs'], paths['act'])
         diff = np.exp(log_act_probas - log_act_probas_new)
@@ -175,6 +186,8 @@ def main():
                                                                                          np.mean(diff),
                                                                                          np.max(diff),
                                                                                          np.std(diff)))
+    opt_policy_demo(env, policy.predict)
+
 
 if __name__ == '__main__':
     main()
