@@ -7,43 +7,43 @@ class AdvancedSampler(object):
         self.keys = ['state', 'action', 'reward', 'done']
 
     def create_path(self):
-        self.paths = {}
+        paths = {}
         for key in self.keys:
-            self.paths[key] = []
-        self.n_path = 0
-        self.n_transitions = 0
+            paths[key] = []
+        n_path = 0
+        return paths, n_path
 
     def rollout(self, policy):
         state = self.env.reset()
         done = False
         while not done:
-            self.n_transitions += 1
-            action = policy(state)
+            action = policy.predict(state)
             next_state, reward, done, _ = self.env.step(action)
             yield state, action, reward, done
             state = next_state
 
     def rollous(self, policy, n_trans):
-        self.create_path()
-        while len(self.paths) < n_trans:
+        paths, n_path = self.create_path()
+        while len(paths['reward']) < n_trans:
             for transition in self.rollout(policy):
                 for key, tran in zip(self.keys, transition):
-                    self.paths[key].append(tran)
-            self.n_path += 1
+                    paths[key].append(tran)
+            n_path += 1
         for key in self.keys:
-            self.paths[key] = np.asarray(self.paths[key])
-            if self.paths[key].ndim == 1:
-                self.paths[key] = np.expand_dims(self.paths[key], axis=-1)
-        self.paths['n_path'] = self.n_path
+            paths[key] = np.asarray(paths[key])
+            if paths[key].ndim == 1:
+                paths[key] = np.expand_dims(paths[key], axis=-1)
+        paths['n_path'] = n_path
+        return paths
 
-    def get_adv(self, policy, val_fn, discount, lam):
-        values = val_fn.predict(self.paths['states'])
-        advantages = np.empty_like(self.paths['reward'])
-        for k, val in enumerate(reversed(self.paths['reward'])):
-            t = len(self.paths['reward']) - k - 1
-            if self.paths['done']: #
-                advantages[t] = self.paths['reward'][k] - values[k]
+    def get_adv(self, paths, val_fn, discount, lam):
+        values = val_fn.predict(paths['state'])
+        advantages = np.empty_like(paths['reward'])
+        for rev_t, val in enumerate(reversed(paths['reward'])):
+            t = len(values) - rev_t - 1
+            if paths['done'][t]:
+                advantages[t] = paths['reward'][t] - values[t]
             else:
-                sigma = self.paths['reward'][k] + discount * values[k+1] - values[k]
-                advantages[t] = sigma + lam * advantages[k+1]
+                sigma = paths['reward'][t] + discount * values[t+1] - values[t]
+                advantages[t] = sigma + lam * advantages[t+1]
         return advantages, values
