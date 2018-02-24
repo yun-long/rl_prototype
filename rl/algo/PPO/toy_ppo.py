@@ -1,6 +1,5 @@
 from rl.policy.gp_mlp import GaussianPolicy_MLP
 from rl.tf.models import MLP
-from rl.env.random_jump import RandomJumpEnv
 #
 import gym
 import time
@@ -42,14 +41,14 @@ class PPO(object):
 
     def train_pol(self, states, old_act, old_log_probas, advantages):
         feed_dict = {self.pol.mlp.x: states,
-                     self.pol.test_action: old_act,
+                     self.pol.actions: old_act,
                      self.advantage: advantages,
                      self.old_log_probas: old_log_probas}
         return self.sess.run(self.optimizer_act, feed_dict)
 
     def evaluate_pol(self, states, old_act, old_log_probas, advantages):
         feed_dict = {self.pol.mlp.x: states,
-                     self.pol.test_action: old_act,
+                     self.pol.actions: old_act,
                      self.advantage: advantages,
                      self.old_log_probas: old_log_probas}
         return -self.sess.run(self.neg_objective_act, feed_dict)

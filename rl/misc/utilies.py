@@ -1,3 +1,4 @@
+import time
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
@@ -50,3 +51,16 @@ def print_envinfo(env, disc_a=False, disc_s=False):
     if not disc_s:
         print("Observation space low : ", env.observation_space.low)
         print("Observation space high: ", env.observation_space.high)
+
+
+def opt_policy_demo(env, policy):
+    obs = env.reset()
+    while True:
+        action = policy(obs)
+        next_obs, reward, done, _ = env.step(action)
+        obs = next_obs
+        env.render()
+        if done:
+            time.sleep(0.5)
+            obs = env.reset()
+

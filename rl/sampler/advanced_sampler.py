@@ -17,7 +17,7 @@ class AdvancedSampler(object):
         state = self.env.reset()
         done = False
         while not done:
-            action = policy.predict(state)
+            action = policy(state)
             next_state, reward, done, _ = self.env.step(action)
             yield state, action, reward, done
             state = next_state
@@ -37,7 +37,7 @@ class AdvancedSampler(object):
         return paths
 
     def get_adv(self, paths, val_fn, discount, lam):
-        values = val_fn.predict(paths['state'])
+        values = val_fn(paths['state'])
         advantages = np.empty_like(paths['reward'])
         for rev_t, val in enumerate(reversed(paths['reward'])):
             t = len(values) - rev_t - 1

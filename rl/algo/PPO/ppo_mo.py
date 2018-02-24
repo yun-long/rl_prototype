@@ -29,7 +29,7 @@ S_DIM, A_DIM = 3, 1
 METHOD = [
     dict(name='kl_pen', kl_target=0.01, lam=0.5),   # KL penalty
     dict(name='clip', epsilon=0.2),                 # Clipped surrogate objective, find this is better
-][1]        # choose the method for optimization
+][0]        # choose the method for optimization
 
 
 class PPO(object):
@@ -125,7 +125,7 @@ env = gym.make('Pendulum-v0').unwrapped
 # env = RandomJumpEnv()
 ppo = PPO()
 all_ep_r = []
-
+print(METHOD['name'])
 for ep in range(EP_MAX):
     s = env.reset()
     buffer_s, buffer_a, buffer_r = [], [], []
