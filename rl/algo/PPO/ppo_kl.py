@@ -19,7 +19,7 @@ opts = {'obj_ID': obj[1], # choose the surrogate objectives, 0 = clipping, 1 = k
         'lam_trace': 0.95,
         'epsilon': 0.2,
         'beta': 5,
-        'kl_target': 1,
+        'kl_target': 0.01,
         'bathch_size': 32,
         'logdir':"/Users/yunlong/Gitlab/rl_prototype/results/ppo/log"}
 #
@@ -76,7 +76,7 @@ class PPO(object):
                     # ratio = pi.prob(self.actions) / old_pi.prob(self.actions)
                     kl = tf.contrib.distributions.kl_divergence(pi, old_pi)
                     self.kl_mean = tf.reduce_mean(kl)
-                    self.loss_a = - tf.reduce_mean(ratio * self.target_adv) -  opts['beta'] * kl
+                    self.loss_a = - (tf.reduce_mean(ratio * self.target_adv) -  opts['beta'] * kl)
                 elif opts['obj_ID'] == 'clipping':
                     self.clip_pr = tf.clip_by_value(ratio, 1.-opts['epsilon'], 1.+opts['epsilon'])
                     self.loss_a = - tf.reduce_mean(tf.minimum(x=tf.multiply(ratio, self.target_adv),
@@ -205,14 +205,14 @@ def main():
                                           paths['action'][batch_idx],
                                           adv[batch_idx],
                                           old_log_prob=log_act_prob[batch_idx])
-            # if d_kl > 4 * opts['kl_target']:
-            #     break
+            if d_kl > 4 * opts['kl_target']:
+                break
 
-        # if opts['obj_ID'] == 'kl_penalty':
-        #     if d_kl < opts['kl_target'] / 1.5:
-        #         opts['beta'] /=2
-        #     elif d_kl > opts['kl_target'] * 1.5:
-        #         opts['beta'] *= 2
+        if opts['obj_ID'] == 'kl_penalty':
+            if d_kl < opts['kl_target'] / 1.5:
+                opts['beta'] /=2
+            elif d_kl > opts['kl_target'] * 1.5:
+                opts['beta'] *= 2
     #
     opt_policy_demo(env, policy=ppo.predict_action)
     ppo.writer.close()
