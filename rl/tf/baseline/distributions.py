@@ -26,53 +26,6 @@ class Pd(object):
     def logp(self, x):
         raise -self.neglogp(x)
 
-class PdType(object):
-    """
-    Parameterized family of probability distibutions
-    """
-
-    def pdclass(self):
-        raise NotImplementedError
-
-    def pdfromflat(self, flat):
-        return self.pdclass()(flat)
-
-    def param_shape(self):
-        raise NotImplementedError
-
-    def sample_shape(self):
-        raise NotImplementedError
-
-    def sample_dtype(self):
-        raise NotImplementedError
-
-    def param_placeholder(self, prepend_shape, name=None):
-        return tf.placeholder(dtype=tf.float32,
-                              shape=prepend_shape+self.param_shape(),
-                              name=name)
-
-    def sample_placeholder(self, prepend_shape, name=None):
-        return tf.placeholder(dtype=self.sample_dtype(),
-                              shape=prepend_shape+self.sample_shape(),
-                              name=name)
-
-class DiagGaussianPdType(PdType):
-
-    def __init__(self, size):
-        self.size = size
-
-    def pdclass(self):
-        return DiagGaussianPd
-
-    def param_shape(self):
-        return [2 * self.size]
-
-    def sample_shape(self):
-        return [self.size]
-
-    def sample_dtype(self):
-        return tf.float32
-
 class DiagGaussianPd(Pd):
 
     def __init__(self, flat):
@@ -109,6 +62,57 @@ class DiagGaussianPd(Pd):
     @classmethod
     def fromflat(cls, flat):
         return cls(flat)
+
+class PdType(object):
+    """
+    Parameterized family of probability distibutions
+    """
+
+    def pdclass(self):
+        raise NotImplementedError
+
+    def pdfromflat(self, flat):
+        return self.pdclass()(flat)
+
+    def param_shape(self):
+        raise NotImplementedError
+
+    def sample_shape(self):
+        raise NotImplementedError
+
+    def sample_dtype(self):
+        raise NotImplementedError
+
+    def param_placeholder(self, prepend_shape, name=None):
+        return tf.placeholder(dtype=tf.float32,
+                              shape=prepend_shape+self.param_shape(),
+                              name=name)
+
+    def sample_placeholder(self, prepend_shape, name=None):
+        return tf.placeholder(dtype=self.sample_dtype(),
+                              shape=prepend_shape+self.sample_shape(),
+                              name=name)
+
+class DiagGaussianPdType(PdType):
+
+    def __init__(self, size):
+        """
+        Size == env.action_space.shpae[0]
+        :param size:
+        """
+        self.size = size
+
+    def pdclass(self):
+        return DiagGaussianPd
+
+    def param_shape(self):
+        return [2 * self.size]
+
+    def sample_shape(self):
+        return [self.size]
+
+    def sample_dtype(self):
+        return tf.float32
 
 
 def make_pdtype(ac_space):
