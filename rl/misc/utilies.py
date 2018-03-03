@@ -1,7 +1,14 @@
 import time
+import os
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
+
+
+def get_dirs(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+    return path
 
 def discount_norm_rewards(rewards, gamma):
     discounted_rewards = np.zeros_like(rewards)
