@@ -3,15 +3,15 @@ Thesis duration:
 
 ### Reinforcement learning algorithms
 
-- [PPO](rl/PPO)
-- [REPS](rl/REPS)
-- [EM](rl/EM)
-- [fREPS](rl/fREPS)
-- [MC](rl/MC)
-- [PG](rl/pg)
-- [TRPO](rl/TRPO)
+- [PPO](rl/algo/PPO)
+- [REPS](rl/algo/REPS)
+- [EM](rl/algo/EM)
+- [fREPS](rl/algo/fREPS)
+- [MC](rl/algo/MC)
+- [PG](rl/algo/pg)
+- [TRPO](rl/algo/TRPO)
 
-#### References:
+### References:
 
 Code:
 - [Reinforcement Learning: An introduction (Github)](https://github.com/dennybritz/reinforcement-learning)
