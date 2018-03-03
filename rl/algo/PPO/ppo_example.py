@@ -114,9 +114,9 @@ def main():
     np.random.seed(seed)
     tf.set_random_seed(seed)
     #
-    # env = gym.make('MountainCarContinuous-v0')
+    env = gym.make('MountainCarContinuous-v0')
     # env = RandomJumpEnv()
-    env = gym.make('Pendulum-v0')
+    # env = gym.make('Pendulum-v0')
     env.seed(seed)
 
     #
@@ -145,7 +145,7 @@ def main():
         print('------------iter , {}, --------------'.format(it))
 
         paths = rollouts(env, policy=policy.predict, min_trans=min_trans_per_iter)
-        print("averaged rewards: ", np.mean(paths['rwd']))
+        print("averaged rewards: ", np.sum(paths['rwd']) / paths['nb_paths'])
 
         # update the v-function
         for epoch in range(epochs_per_iter):

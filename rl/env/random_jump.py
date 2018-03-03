@@ -32,7 +32,7 @@ class RandomJumpEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def _reset(self):
+    def reset(self):
         self.state = [self.np_random.uniform(low=-.90, high=-.80)]
         # self.state = [-1.2]
         return np.array(self.state)
