@@ -3,13 +3,15 @@ Thesis duration:
 
 ### Reinforcement learning algorithms
 
-- [PPO](rl/algo/PPO)
-- [REPS](rl/algo/REPS)
-- [EM](rl/algo/EM)
-- [fREPS](rl/algo/fREPS)
-- [MC](rl/algo/MC)
-- [PG](rl/algo/pg)
-- [TRPO](rl/algo/TRPO)
+- [DP (Dynamic Programming)](rl/algo/dp)
+- [TD (Temporal Difference Learning)](rl/algo/td)
+- [MC (Monte Carlo)](rl/algo/MC)
+- [PG (Policy Gradient)](rl/algo/pg)
+- [EM (Expected Maximum)](rl/algo/EM)
+- [REPS (Relative Entropy Policy Search)](rl/algo/REPS)
+- [fREPS (f-divergence Relative Entropy Policy Search)](rl/algo/fREPS)
+- [TRPO (Trust Region Policy Optimization)](rl/algo/TRPO)
+- [PPO (Proximal Policy Optimization)](rl/algo/PPO)
 
 ### References:
 
