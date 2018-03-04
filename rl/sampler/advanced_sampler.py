@@ -2,9 +2,10 @@ import numpy as np
 
 class AdvancedSampler(object):
 
-    def __init__(self, env):
+    def __init__(self, env, sess=None):
         self.env = env
         self.keys = ['state', 'action', 'reward', 'done']
+        self.sess = sess
 
     def create_path(self):
         paths = {}
@@ -17,7 +18,10 @@ class AdvancedSampler(object):
         state = self.env.reset()
         done = False
         while not done:
-            action = policy(state)
+            if self.sess is not None:
+                action = policy(state, self.sess)
+            else:
+                action = policy(state)
             next_state, reward, done, _ = self.env.step(action)
             yield state, action, reward, done
             state = next_state

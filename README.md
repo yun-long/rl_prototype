@@ -5,13 +5,13 @@ Thesis duration:
 
 - [DP (Dynamic Programming)](rl/algo/dp)
 - [TD (Temporal Difference Learning)](rl/algo/td)
-- [MC (Monte Carlo)](rl/algo/MC)
+- [MC (Monte Carlo)](rl/algo/mc)
 - [PG (Policy Gradient)](rl/algo/pg)
-- [EM (Expected Maximum)](rl/algo/EM)
-- [REPS (Relative Entropy Policy Search)](rl/algo/REPS)
-- [fREPS (f-divergence Relative Entropy Policy Search)](rl/algo/fREPS)
-- [TRPO (Trust Region Policy Optimization)](rl/algo/TRPO)
-- [PPO (Proximal Policy Optimization)](rl/algo/PPO)
+- [EM (Expected Maximum)](rl/algo/em)
+- [REPS (Relative Entropy Policy Search)](rl/algo/reps)
+- [fREPS (f-divergence Relative Entropy Policy Search)](rl/algo/freps)
+- [TRPO (Trust Region Policy Optimization)](rl/algo/trpo)
+- [PPO (Proximal Policy Optimization)](rl/algo/ppo)
 
 ### References:
 

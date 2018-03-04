@@ -165,7 +165,7 @@ def main():
     np.random.seed(seed)
     tf.set_random_seed(seed)
     #
-    # env = gym.make(env_IDs.MounCarCon)
+    # env = gym.make(env_IDs.Pendulum)
     env = gym.make('MountainCarContinuous-v0')
     env.seed(seed)
     # define Proximal policy optimization class

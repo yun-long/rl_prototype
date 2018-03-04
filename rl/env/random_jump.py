@@ -37,7 +37,7 @@ class RandomJumpEnv(gym.Env):
         # self.state = [-1.2]
         return np.array(self.state)
 
-    def _step(self, action):
+    def step(self, action):
         noise = np.random.uniform(low=-0.1,high=0.1)
         position = self.state[0]
         #
@@ -57,7 +57,7 @@ class RandomJumpEnv(gym.Env):
         #
         return self.state[0], reward, done, {}
 
-    def _render(self, mode='human', close=False):
+    def render(self, mode='human', close=False):
         if close:
             if self.viewer is not None:
                 self.viewer.close()
