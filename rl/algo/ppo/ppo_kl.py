@@ -1,43 +1,187 @@
 import tensorflow as tf
 import numpy as np
+import gym
+#
+from rl.misc.utilies import opt_policy_demo
+from rl.sampler.advanced_sampler import AdvancedSampler, next_batch_idx
+from rl.tf.baselines.common.misc_util import zipsame
+import rl.tf.baselines.common.tf_util as U
+#
 
-from rl.tf.baselines.common.distributions import make_pdtype
-from rl.tf.baselines.a2c.utils import fc
+def build_mlp(input, sizes, activations, trainable):
+    last_out = input
+    for l, size in enumerate(sizes):
+        last_out = tf.layers.dense(inputs=last_out,
+                                   units=size,
+                                   activation=activations[l],
+                                   kernel_initializer=tf.glorot_uniform_initializer(),
+                                   trainable=trainable,
+                                   name='fc{}'.format(l+1))
+    return last_out
+
+class MlpValue(object):
+    def __init__(self, sess, input, name, trainable=True):
+        self.sess = sess
+        self.X = input
+        sizes = [64, 64, 1]
+        activations = [tf.nn.relu, tf.nn.relu, tf.identity]
+        with tf.variable_scope(name):
+            self.vf = build_mlp(input, sizes, activations, trainable=trainable)
+
+    def value(self, state):
+        return self.sess.run(self.vf, {self.X: state})
 
 class MlpPolicy(object):
-    def __init__(self, sess, ob_space, ac_space, nbatch, nsteps, reuse=False): #pylint: disable=W0613
-        ob_shape = (nbatch,) + ob_space.shape
+    def __init__(self, sess, input, ac_space, name, trainable=True):
+        self.sess = sess
+        self.X = input
         actdim = ac_space.shape[0]
-        X = tf.placeholder(tf.float32, ob_shape, name='Ob') #obs
-        with tf.variable_scope("model", reuse=reuse):
-            activ = tf.tanh
-            h1 = activ(fc(X, 'pi_fc1', nh=64, init_scale=np.sqrt(2)))
-            h2 = activ(fc(h1, 'pi_fc2', nh=64, init_scale=np.sqrt(2)))
-            pi = fc(h2, 'pi', actdim, init_scale=0.01)
-            h1 = activ(fc(X, 'vf_fc1', nh=64, init_scale=np.sqrt(2)))
-            h2 = activ(fc(h1, 'vf_fc2', nh=64, init_scale=np.sqrt(2)))
-            vf = fc(h2, 'vf', 1)[:,0]
-            logstd = tf.get_variable(name="logstd", shape=[1, actdim],
-                initializer=tf.zeros_initializer())
+        sizes = [64, 64, actdim]
+        activations = [tf.nn.relu, tf.nn.relu, tf.nn.tanh]
+        with tf.variable_scope(name):
+            mean = build_mlp(input, sizes, activations, trainable=trainable)
+            std = tf.exp(tf.get_variable(name="logstd", shape=[1, actdim], initializer=tf.zeros_initializer()))
+            # self.pd = tf.contrib.distributions.MultivariateNormalDiag(mean, std)
+            self.pd = tf.distributions.Normal(loc=mean, scale=std)
+            self.scope_name = tf.get_variable_scope().name
+            # print(self.scope_name)
+        #
+        self.sample_action = self.pd.sample()
 
-        pdparam = tf.concat([pi, pi * 0.0 + logstd], axis=1)
+    def act(self, state):
+        action = np.squeeze(self.sess.run(self.sample_action, {self.X: np.asmatrix(state)}), axis=0)
+        return action
 
-        self.pdtype = make_pdtype(ac_space)
-        self.pd = self.pdtype.pdfromflat(pdparam)
+    def get_params(self):
+        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=self.scope_name)
 
-        a0 = self.pd.sample()
-        neglogp0 = self.pd.neglogp(a0)
-        self.initial_state = None
 
-        def step(ob, *_args, **_kwargs):
-            a, v, neglogp = sess.run([a0, vf, neglogp0], {X:ob})
-            return a, v, self.initial_state, neglogp
+def policy_fn(sess, input, ac_space, name, trainable):
+    mlp =  MlpPolicy(sess=sess, input=input, ac_space= ac_space, name=name, trainable=trainable)
+    params = mlp.get_params()
+    return mlp, params
 
-        def value(ob, *_args, **_kwargs):
-            return sess.run(vf, {X:ob})
+def learn(env, sess, episodes, max_trans, epochs, batch_size, gamma, lam, clip_param, beta, ent_coeff, c_lrate, a_lrate, kl_target, method='kl'):
+    act_space = env.action_space
+    obs_space = env.observation_space
+    #
+    samp_state = tf.placeholder(dtype=tf.float32, shape=[None, obs_space.shape[0]], name='states')
+    #
+    with tf.variable_scope("actor"):
+        pi = MlpPolicy(sess, samp_state, act_space, name='mlp_pi', trainable=True) # new policy
+        oldpi = MlpPolicy(sess, samp_state, act_space, name='mlp_oldpi', trainable=False) # old policy
+        #
+        old_logp_act = tf.placeholder(tf.float32, shape=[None, 1], name='old_logp_act')
+        target_adv = tf.placeholder(tf.float32, shape=[None, 1], name='advantages')
+        samp_action = tf.placeholder(tf.float32, shape=[None, act_space.shape[0]], name='action')
+        # log_prob = tf.expand_dims(pi.pd.log_prob(samp_action), axis=-1)
+        log_prob = pi.pd.log_prob(samp_action)
+        #
+        ratio = tf.exp(log_prob - old_logp_act)
+        entropy = pi.pd.entropy()
+        kl = tf.contrib.distributions.kl_divergence(oldpi.pd, pi.pd)
+        meankl = tf.reduce_mean(kl)
+        meanent = tf.reduce_mean(entropy)
+        clip_pr = tf.clip_by_value(ratio, 1.0 - clip_param, 1.0 + clip_param)
+        with tf.variable_scope("loss_optimizer"):
+            if method == 'clip':
+                loss_policy = - tf.reduce_mean(tf.minimum(x=tf.multiply(ratio, target_adv),
+                                                          y=tf.multiply(clip_pr, target_adv)))
+            elif method == 'kl':
+                loss_policy = - (tf.reduce_mean(ratio * target_adv) - beta * meankl)
+            else:
+                loss_policy = None
+                raise NotImplementedError
+            train_opt_policy = tf.train.AdamOptimizer(a_lrate).minimize(loss_policy)
 
-        self.X = X
-        self.pi = pi
-        self.vf = vf
-        self.step = step
-        self.value = value
+    assign_old_eq_new = U.function([], [], updates=[tf.assign(oldv, newv) for (oldv, newv) in zipsame(oldpi.get_params(), pi.get_params())])
+    with tf.variable_scope("critic"):
+        valuf_fn = MlpValue(sess, samp_state, name='mlp_value', trainable=True)
+        target_v = tf.placeholder(tf.float32, shape=[None, 1], name='target_v')
+        with tf.variable_scope("loss_optimizer"):
+            loss_value = tf.losses.mean_squared_error(target_v, valuf_fn.vf)
+            train_opt_value = tf.train.AdamOptimizer(c_lrate).minimize(loss_value)
+
+
+    def get_log_prob(state, action):
+        return sess.run(log_prob, {pi.X: state, samp_action: action})
+
+    def train_actor(state, action, advantage, old_log_prob):
+        feed_dict = {pi.X: state, samp_action: action, target_adv: advantage, old_logp_act: old_log_prob}
+        return sess.run([loss_policy, meankl, train_opt_policy], feed_dict=feed_dict)
+
+    def train_critic(state, value):
+        feed_dict = {pi.X: state, target_v: value}
+        return sess.run([loss_value, train_opt_value], feed_dict=feed_dict)
+
+
+    sampler = AdvancedSampler(env)
+    sess.run(tf.global_variables_initializer())
+    tf.summary.FileWriter('./log', sess.graph)
+    for i_episode in range(episodes):
+        print("-------- episode: {}------------".format(i_episode))
+        # sample data
+        paths = sampler.rollous(pi.act, n_trans=max_trans)
+        print("Mean reward: {}".format(np.sum(paths['reward'] / paths['n_path'])))
+        #
+        losses = []
+        for epoch in range(epochs):
+            # generate advantages
+            adv, values = sampler.get_adv(paths, valuf_fn.value, discount=gamma, lam=lam)
+            v_targes = values + adv
+            for batch_idx in next_batch_idx(batch_size, len(v_targes)):
+                loss_v, _ = train_critic(state=paths['state'][batch_idx], value=v_targes[batch_idx])
+                losses.append(loss_v)
+        print("critic: ",np.mean(losses))
+
+        # update actor
+        adv, _ = sampler.get_adv(paths, valuf_fn.value, discount=gamma, lam=lam)
+        adv = adv / np.std(adv)
+        #
+        logp_act_sample = get_log_prob(state=paths['state'], action=paths['action'])
+        assign_old_eq_new()
+        #
+        losses = []
+        for epoch in range(epochs):
+            for batch_idx in next_batch_idx(batch_size, len(adv)):
+                loss_a, d_kl, _ = train_actor(state=paths['state'][batch_idx],
+                                              action=paths['action'][batch_idx],
+                                              advantage=adv[batch_idx],
+                                              old_log_prob=logp_act_sample[batch_idx])
+                losses.append(loss_a)
+                if method == 'kl' and d_kl > 4 * kl_target:
+                    print("breaking")
+                    break
+            if d_kl < kl_target / 1.5:
+                beta /= 2
+            elif d_kl > kl_target * 1.5:
+                beta *= 2
+            beta = np.clip(beta, 1e-4, 10)
+        print("actor: ", np.mean(losses))
+
+        if i_episode >= 70:
+            opt_policy_demo(env, policy=pi.act)
+
+
+if __name__ == '__main__':
+    seed = 1
+    env = gym.make("Pendulum-v0")
+    # env = gym.make("MountainCarContinuous-v0")
+    env.seed(seed)
+    #
+    with tf.Session() as sess:
+        learn(env, sess,
+              episodes=2000,
+              max_trans=3200,
+              epochs=10,
+              batch_size=32,
+              gamma=0.99,
+              lam=0.95,
+              clip_param=0.2,
+              beta=1.0,
+              ent_coeff=0.0,
+              c_lrate=3e-4,
+              a_lrate=3e-4,
+              kl_target=0.01,
+              method='kl')
+

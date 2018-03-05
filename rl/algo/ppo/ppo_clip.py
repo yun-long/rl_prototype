@@ -197,7 +197,7 @@ def main():
         adv = adv / np.std(adv)
         #
         log_act_prob = ppo.get_log_prob(paths['state'], paths['action'])
-        ppo.update_oldpi()
+        # ppo.update_oldpi()
         #
         for epoch in range(opts['n_epochs']):
             for batch_idx in next_batch_idx(opts['bathch_size'], len(adv)):

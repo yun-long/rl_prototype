@@ -22,6 +22,7 @@ class AdvancedSampler(object):
                 action = policy(state, self.sess)
             else:
                 action = policy(state)
+            # print(action)
             next_state, reward, done, _ = self.env.step(action)
             yield state, action, reward, done
             state = next_state
@@ -51,3 +52,8 @@ class AdvancedSampler(object):
                 sigma = paths['reward'][t] + discount * values[t+1] - values[t]
                 advantages[t] = sigma + lam * advantages[t+1]
         return advantages, values
+
+def next_batch_idx(batch_size, data_set_size):
+    batch_idx_list = np.random.choice(data_set_size, data_set_size, replace=False)
+    for batch_start in range(0, data_set_size, batch_size):
+        yield batch_idx_list[batch_start: min(batch_start+batch_size, data_set_size)]
