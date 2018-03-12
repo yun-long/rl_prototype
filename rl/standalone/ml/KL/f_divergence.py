@@ -18,12 +18,16 @@ def alpha_fn(alpha=1.0):
                       / (alpha * (alpha - 1))
     return f
 
+def wasserstein_distance(mu1, mu2, sigma1, sigma2):
+    w2 = np.square(mu1-mu2) + (sigma1 + sigma2 - 2 * np.sqrt(np.sqrt(sigma2) *  sigma2 * np.sqrt(sigma2)))
+    return w2
+
 def plot_p_q(i, ax, xrange, p, q, alpha):
     ax.spines['left'].set_position('zero')
     ax.spines['right'].set_color('none')
     ax.spines['bottom'].set_position('zero')
     ax.spines['top'].set_color('none')
-    ax.set_xlim(-20, 20)
+    ax.set_xlim(xmin, xmax)
     ax.set_ylim(-0.1, 0.25)
     ax.set_title(r'$\alpha={}$'.format(alpha), rotation='vertical', x=-0.1, y=0.6)
     #
@@ -38,7 +42,7 @@ def plot_f(i, ax, xrange, f):
     ax.spines['right'].set_color('none')
     ax.spines['bottom'].set_position('zero')
     ax.spines['top'].set_color('none')
-    ax.set_xlim(-20, 20)
+    ax.set_xlim(xmin, xmax)
     ax.set_ylim(-1, 3)
     #
     # D_f = q(xrange) * f(p(xrange) / q(xrange))
@@ -53,18 +57,23 @@ def plot_f_int(i, ax, xrange, kl_ints):
     ax.spines['right'].set_color('none')
     ax.spines['bottom'].set_position('zero')
     ax.spines['top'].set_color('none')
-    ax.set_xlim(-10, 10)
-    ax.set_ylim(-0.01, 15)
-    ax.scatter(xrange, kl_ints, c=reversed(xrange))
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(-0.01, 100)
+    # ax.scatter(xrange, kl_ints, c=reversed(xrange))
+    ax.scatter(xrange, kl_ints)
     if i == 0:
         ax.set_title(r'$D_{f}(p||q)$')
 #
-xrange = np.arange(-20, 20, 0.01)
-p_mu = np.arange(-10, 10, 0.1)
+xmin = -20
+xmax = 20
+mu_min = -10
+mu_max = 10
+xrange = np.arange(xmin, xmax, 0.1)
+p_mu = np.arange(mu_min, mu_max, 0.2)
 #
 f_ints = []
 #
-alphas = [-1, -0.5, 0, 0.5, 1  ]
+alphas = ['wgan', 1]
 for _ in range(len(alphas)):
     f_ints.append([])
 
@@ -74,18 +83,23 @@ for mu in p_mu:
     p  = lambda x : norm.pdf(x, mu, 2)
     q  = lambda x : norm.pdf(x, 0, 2)
     #
-    fig, axes = plt.subplots(5,3, figsize=(15,8), dpi=100)
+    fig, axes = plt.subplots(len(alphas),2, figsize=(15,8), dpi=100)
     fig.set_size_inches(18.5, 10.5)
     #
     for i, alpha in enumerate(alphas):
-        alpha_f = alpha_fn(alpha=alpha)
-        f = lambda x : q(x) * alpha_f(p(x)/ q(x))
-        f_int = quad(f, -20, 20)
+        if alpha == 'wgan':
+            w = wasserstein_distance(mu, 0, 2, 2)
+            f_int = [w]
+        else:
+            alpha_f = alpha_fn(alpha=alpha)
+            f = lambda x : q(x) * alpha_f(p(x)/ q(x))
+            f_int = quad(f, xmin, xmax)
+        print(f_int[0])
         f_ints[i].append(f_int[0])
         print("alpha : {}, \t \t f divergence : {}".format(alpha, f_int[0]))
         plot_p_q(i, ax=axes[i][0], xrange=xrange, p=p, q=q, alpha=alpha)
-        plot_f(i, ax=axes[i][1], xrange=xrange, f=f)
-        plot_f_int(i, ax=axes[i][2], xrange=p_mu[:len(f_ints[i])], kl_ints=f_ints[i])
+        # plot_f(i, ax=axes[i][1], xrange=xrange, f=f)
+        plot_f_int(i, ax=axes[i][1], xrange=p_mu[:len(f_ints[i])], kl_ints=f_ints[i])
         plt.suptitle("f-divergence demo".format(alpha))
     image = fig_to_image(fig)
     # frames.append(image)

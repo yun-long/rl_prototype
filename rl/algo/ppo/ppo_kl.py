@@ -1,12 +1,19 @@
 import tensorflow as tf
 import numpy as np
 import gym
+import os
 #
+from rl.misc.utilies import get_dirs
+from rl.misc.plot_rewards import plot_tr_ep_rs, plot_coeff_tr_ep_rs
 from rl.misc.utilies import opt_policy_demo
 from rl.sampler.advanced_sampler import AdvancedSampler, next_batch_idx
 from rl.tf.baselines.common.misc_util import zipsame
 import rl.tf.baselines.common.tf_util as U
 #
+result_path = os.path.join(os.path.realpath("../../../"), 'results')
+ppo_result_path = get_dirs(os.path.join(result_path, 'ppo'))
+model_path = get_dirs(os.path.join(ppo_result_path, 'model'))
+log_path = get_dirs(os.path.join(ppo_result_path, 'log'))
 
 def build_mlp(input, sizes, activations, trainable):
     last_out = input
@@ -40,7 +47,7 @@ class MlpPolicy(object):
         activations = [tf.nn.relu, tf.nn.relu, tf.nn.tanh]
         with tf.variable_scope(name):
             mean = build_mlp(input, sizes, activations, trainable=trainable)
-            std = tf.exp(tf.get_variable(name="logstd", shape=[1, actdim], initializer=tf.zeros_initializer()))
+            std = tf.exp(tf.get_variable(name="logstd", shape=[1, actdim], initializer=tf.ones_initializer()))
             # self.pd = tf.contrib.distributions.MultivariateNormalDiag(mean, std)
             self.pd = tf.distributions.Normal(loc=mean, scale=std)
             self.scope_name = tf.get_variable_scope().name
@@ -117,12 +124,15 @@ def learn(env, sess, episodes, max_trans, epochs, batch_size, gamma, lam, clip_p
 
     sampler = AdvancedSampler(env)
     sess.run(tf.global_variables_initializer())
-    tf.summary.FileWriter('./log', sess.graph)
+    saver =  tf.train.Saver()
+    writer = tf.summary.FileWriter(log_path, sess.graph)
+    rewards = []
     for i_episode in range(episodes):
         print("-------- episode: {}------------".format(i_episode))
         # sample data
         paths = sampler.rollous(pi.act, n_trans=max_trans)
         print("Mean reward: {}".format(np.sum(paths['reward'] / paths['n_path'])))
+        rewards.append(np.sum(paths['reward'] / paths['n_path']))
         #
         losses = []
         for epoch in range(epochs):
@@ -159,29 +169,45 @@ def learn(env, sess, episodes, max_trans, epochs, batch_size, gamma, lam, clip_p
             beta = np.clip(beta, 1e-4, 10)
         print("actor: ", np.mean(losses))
 
-        if i_episode >= 70:
-            opt_policy_demo(env, policy=pi.act)
-
+    return rewards, saver
 
 if __name__ == '__main__':
-    seed = 1
+    seed = 1234
     env = gym.make("Pendulum-v0")
+    pendulum_model = get_dirs(os.path.join(model_path, 'Pendulum-v0'))
     # env = gym.make("MountainCarContinuous-v0")
-    env.seed(seed)
     #
-    with tf.Session() as sess:
-        learn(env, sess,
-              episodes=2000,
-              max_trans=3200,
-              epochs=10,
-              batch_size=32,
-              gamma=0.99,
-              lam=0.95,
-              clip_param=0.2,
-              beta=1.0,
-              ent_coeff=0.0,
-              c_lrate=3e-4,
-              a_lrate=3e-4,
-              kl_target=0.01,
-              method='kl')
+    methods = ['kl', 'clip']
+    num_trails = 10
+    num_episodes = 100
+    mean_rewards = np.zeros((num_episodes, num_trails, len(methods)))
+    for i_m, method in enumerate(methods):
+        for i_trail in range(num_trails):
+            env.seed(seed)
+            tf.reset_default_graph()
+            with tf.Session() as sess:
+                reward, saver = learn(env, sess,
+                                      episodes=num_episodes,
+                                      max_trans=3200,
+                                      epochs=10,
+                                      batch_size=32,
+                                      gamma=0.99,
+                                      lam=0.95,
+                                      clip_param=0.2,
+                                      beta=1.0,
+                                      ent_coeff=0.0,
+                                      c_lrate=3e-4,
+                                      a_lrate=3e-4,
+                                      kl_target=0.01,
+                                      method=method)
+                mean_rewards[:, i_trail, i_m] = reward
+                if i_trail >= num_trails - 1:
+                    if method == 'clip':
+                        saver.save(sess, pendulum_model + "/clip_model")
+                    if method == 'kl':
+                        saver.save(sess, pendulum_model + "/kl_model")
+                    sess.close()
+    # plot_tr_ep_rs(mean_rewards, show=True)
+    plot_coeff_tr_ep_rs(mean_rewards, methods, label='ppo_', savepath=ppo_result_path + '/result.png')
+
 
