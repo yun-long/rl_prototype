@@ -43,11 +43,11 @@ def plot_f(ax, xrange, f, title, color='orange'):
     ax.legend()
     # ax.set_title(title)
 
-p = lambda x : norm.pdf(x, -100, 2)
+p = lambda x : norm.pdf(x, -1, 2)
 
 q = lambda x : norm.pdf(x, 0, 2)
 
-xrange = np.arange(-200, 200, 0.01)
+xrange = np.arange(-2, 2, 0.01)
 
 fig, axes = plt.subplots(2,2)
 # plot p and q
@@ -55,7 +55,7 @@ plot_p_q(ax=axes[0][0], xrange=xrange, p=p, q=q)
 # plot kl
 f_1 = alpha_fn(alpha=1.0)
 f = lambda x : q(x) * f_1(p(x)/ q(x))
-f_int = quad(f, -200, 200)
+f_int = quad(f, -2, 2)
 print(f_int)
 # f_int = quad(f, -10, 10)
 plot_f(ax=axes[0][1], xrange=xrange, f=f, title=r'$D_{KL}(p || q)$')

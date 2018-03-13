@@ -45,8 +45,8 @@ alpha_names = [r'$\alpha = {:2.1f}$'.format(alpha)
                for alpha in params['alphas']]
 ax = sns.tsplot(data=ret_mat, ax=ax, ci='sd', condition=alpha_names)
 ax.plot(ret_mat[:, :, 0].T)
-ax.plot([0, params['n_iter']], [solve_lin_prog(env)[-1]]*2,
-        c='0.6', ls='dashed', label='optimal policy')
+# ax.plot([0, params['n_iter']], [solve_lin_prog(env)[-1]]*2,
+#         c='0.6', ls='dashed', label='optimal policy')
 ax.set_title('Chain')
 ax.set_xlabel('Iteration')
 ax.set_ylabel('Expected reward')

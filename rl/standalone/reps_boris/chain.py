@@ -32,7 +32,7 @@ class ChainEnv(DiscreteEnv):
     P[nS-1][1].append((pf, 0, small, False))
 
     super().__init__(nS, nA, P, isd)
-    self._seed()
+    # self._seed()
 
   def _render(self, mode='human', close=False):
     if close:

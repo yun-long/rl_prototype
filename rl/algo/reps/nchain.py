@@ -7,6 +7,8 @@ from rl.policy.discrete_policy import DistributionPolicy
 #
 from gym.envs.toy_text.nchain import NChainEnv
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def reps_step_based(val_featurizer, policy, sampler, num_episodes, param_eta0, param_v0, epsilon):
     episodes_rewards = []
@@ -42,11 +44,12 @@ if __name__ == '__main__':
     sampler = StandardSampler(env)
     #
     # initialization paramteres for dual function
-    epsilons = [0.1, 0.5, 0.9]
+    epsilons = [0.1, 0.2, 0.5]
     #
     num_trails = 10
     num_episodes = 30
-    mean_rewards = np.zeros((num_episodes, num_trails, len(epsilons)))
+    # mean_rewards = np.zeros((num_episodes, num_trails, len(epsilons)))
+    mean_rewards = np.zeros((num_trails, num_episodes, len(epsilons)))
     #
     for i_eps, epsilon in enumerate(epsilons):
         for i_trail in range(num_trails):
@@ -64,9 +67,9 @@ if __name__ == '__main__':
                                      param_eta0=param_eta0,
                                      param_v0=param_v0,
                                      epsilon=epsilon)
-            mean_rewards[:, i_trail, i_eps ] = reward
+            mean_rewards[i_trail, : , i_eps ] = reward
     #
-    # plot_2D_value(env, value_fn, show=True)
-    #
-    # plot_tr_ep_rs(trail_rewards, show=True)
-    plot_coeff_tr_ep_rs(mean_rewards, coeff=epsilons, label=r'$\epsilon$ = ', show=True)
+    fig, ax = plt.subplots()
+    epsilon_names = [r'$\alpha = {:.2f}$'.format(ep) for ep in epsilons ]
+    ax = sns.tsplot(data=mean_rewards, ax=ax, ci="sd", condition=epsilon_names)
+    plt.show()
