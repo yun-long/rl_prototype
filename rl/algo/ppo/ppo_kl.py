@@ -9,7 +9,7 @@ import ot
 import pandas as pd
 #
 from rl.misc.utilies import get_dirs
-from rl.algo.ppo.utils import build_mlp, alpha_fn, f_div, ppo_result_path
+from rl.algo.ppo.utils import build_mlp, alpha_fn, f_div, ppo_result_path, w2
 from rl.sampler.advanced_sampler import AdvancedSampler, next_batch_idx
 from rl.tf.baselines.common.misc_util import zipsame
 import rl.tf.baselines.common.tf_util as U
@@ -67,12 +67,20 @@ def learn(env, sess, i_trial,
           gamma=0.99,
           lam=0.95,
           clip_param=0.2,
-          beta=3.0,
+          beta=1.0,
           ent_coeff=0.0,
           c_lrate=3e-4,
           a_lrate=3e-4,
           kl_target=0.01,
+          w2_target=0.1,
           alpha=1.0, method='kl'):
+    assert isinstance(method, str)
+    if method.lower() == 'w2':
+        div_target = w2_target
+        beta = 0.1
+    else:
+        beta = 1.0
+        div_target = kl_target
     act_space = env.action_space
     obs_space = env.observation_space
     #
@@ -83,10 +91,12 @@ def learn(env, sess, i_trial,
         oldpi = MlpPolicy(sess, samp_state, act_space, name='mlp_oldpi', trainable=False) # old policy
         #
         old_logp_act = tf.placeholder(tf.float32, shape=[None, 1], name='old_logp_act')
+        old_p_act = tf.placeholder(tf.float32, shape=[None, 1], name='old_p_act')
         target_adv = tf.placeholder(tf.float32, shape=[None, 1], name='advantages')
         samp_action = tf.placeholder(tf.float32, shape=[None, act_space.shape[0]], name='action')
         # log_prob = tf.expand_dims(pi.pd.log_prob(samp_action), axis=-1)
         log_prob = pi.pd.log_prob(samp_action)
+        prob = pi.pd.prob(samp_action)
         #
         ratio = tf.exp(log_prob - old_logp_act)
         entropy = pi.pd.entropy()
@@ -109,8 +119,10 @@ def learn(env, sess, i_trial,
                 mean_div = tf.reduce_mean(f_divergence)
                 # TODO: make beta smaller
                 loss_policy = -(tf.reduce_mean(ratio * target_adv) - beta * mean_div)
-            else:
-                raise NotImplementedError
+            elif method.lower() == 'w2':
+                ws2 = tf.placeholder(tf.float32, shape=1, name='wasserstein2_distance')
+                # mean_w2 = tf.reduce_mean()
+                loss_policy = -(tf.reduce_mean(ratio * target_adv) - beta * ws2)
             train_opt_policy = tf.train.AdamOptimizer(a_lrate).minimize(loss_policy)
 
     assign_old_eq_new = U.function([], [], updates=[tf.assign(oldv, newv) for (oldv, newv) in zipsame(oldpi.get_params(), pi.get_params())])
@@ -125,9 +137,16 @@ def learn(env, sess, i_trial,
     def get_log_prob(state, action):
         return sess.run(log_prob, {pi.X: state, samp_action: action})
 
-    def train_actor(state, action, advantage, old_log_prob):
-        feed_dict = {pi.X: state, samp_action: action, target_adv: advantage, old_logp_act: old_log_prob}
-        return sess.run([loss_policy, mean_div, entropy, train_opt_policy], feed_dict=feed_dict)
+    def get_prob(state, action):
+        return sess.run(prob, {pi.X: state, samp_action: action})
+
+    def train_actor(state, action, advantage, old_log_prob, sample_ws2=None):
+        if sample_ws2 is not None:
+            feed_dict = {pi.X: state, samp_action: action, target_adv: advantage, old_logp_act: old_log_prob, ws2: sample_ws2}
+            return sess.run([loss_policy, ws2, meanent, train_opt_policy], feed_dict=feed_dict)
+        else:
+            feed_dict = {pi.X: state, samp_action: action, target_adv: advantage, old_logp_act: old_log_prob}
+            return sess.run([loss_policy, mean_div, meanent, train_opt_policy], feed_dict=feed_dict)
 
     def train_critic(state, value):
         feed_dict = {pi.X: state, target_v: value}
@@ -161,6 +180,7 @@ def learn(env, sess, i_trial,
         adv = adv / np.std(adv)
         #
         logp_act_sample = get_log_prob(state=paths['state'], action=paths['action'])
+        p_act_smaple = get_prob(state=paths['state'], action=paths['action'])
         assign_old_eq_new()
         #
         losses_a = []
@@ -168,21 +188,29 @@ def learn(env, sess, i_trial,
         ent_tmp = []
         for epoch in range(epochs):
             for batch_idx in next_batch_idx(batch_size, len(adv)):
+                if method == 'w2':
+                    action = paths['action'][batch_idx]
+                    p = p_act_smaple[batch_idx]
+                    q = get_prob(state=paths['state'], action=paths['action'])[batch_idx]
+                    dist_w = w2(action=action, log_p=p, log_q=q)
+                else:
+                    dist_w = None
                 loss_a, d, ent, _ = train_actor(state=paths['state'][batch_idx],
                                               action=paths['action'][batch_idx],
                                               advantage=adv[batch_idx],
-                                              old_log_prob=logp_act_sample[batch_idx])
+                                              old_log_prob=logp_act_sample[batch_idx],
+                                              sample_ws2=dist_w)
                 losses_a.append(loss_a)
                 divg_tmp.append(d)
                 ent_tmp.append(ent)
-            #     if method == 'kl' and d > 4 * kl_target:
-            #         print("breaking")
-            #         break
-            # if d < kl_target / 1.5:
-            #     beta /= 2
-            # elif d > kl_target * 1.5:
-            #     beta *= 2
-            # beta = np.clip(beta, 1e-4, 10)
+                if method == 'kl' and d > 4 * div_target:
+                    print("breaking")
+                    break
+            if d < div_target / 1.5:
+                beta /= 2
+            elif d > div_target * 1.5:
+                beta *= 2
+            beta = np.clip(beta, 1e-4, 10)
         # writer.add_summary(np.mean(losses), i_episode)
         print("actor: ", np.mean(losses_a))
         if alpha == 1.0:
@@ -196,9 +224,10 @@ def learn(env, sess, i_trial,
 
 def run_trails(env, num_trails, num_episodes, method, alpha, seed):
     mean_rewards = np.zeros(shape=(num_trails, num_episodes))
+    env.seed(seed)
+    tf.set_random_seed(seed)
+    np.random.seed(seed)
     for i_trial in range(num_trails):
-        env.seed(seed)
-        tf.set_random_seed(seed)
         tf.reset_default_graph()
         with tf.Session() as sess:
             learn(env=env, sess=sess, i_trial=i_trial, num_episodes=num_episodes, alpha=alpha, method=method)
@@ -212,14 +241,15 @@ if __name__ == '__main__':
     # env_ID = "MountainCarContinuous-v0"
     env = gym.make(env_ID)
     #
-    # methods = ['kl', 'clip']
-    methods = ['clip', 'f']
-    alphas = [-1.0, 1.0, 2.0,  'GAN']
-    num_trails = 10
-    num_episodes = 150
+    methods = ['clip', 'f', 'w2']
+    # methods = ['w2']
+    alphas = [1.0, 2.0, 'GAN', -1.0]
+    num_trails = 1
+    num_episodes = 300
     for i_m, method in enumerate(methods):
-        if method == 'clip':
-            stats = run_trails(env, num_trails, num_episodes, method=method, alpha='clip', seed=seed)
+        if method == 'clip' or method == 'w2':
+            stats = run_trails(env, num_trails, num_episodes, method=method, alpha=method, seed=seed)
+            data.to_csv(path_csv, index=False)
         elif method == 'f':
             for i_alpha, alpha in enumerate(alphas):
                 stats = run_trails(env, num_trails, num_episodes, method=method, alpha=alpha, seed=seed)

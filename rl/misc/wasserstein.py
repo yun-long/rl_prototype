@@ -58,6 +58,7 @@ for i, m in enumerate(lst_m):
 # gan /= gan.max()
 
 # loss matrix and normalization
+print(x.reshape((n, 1)).shape)
 M1 = ot.dist(x.reshape((n, 1)), x.reshape((n, 1)), 'euclidean')
 M1 /= M1.max()
 M2 = ot.dist(x.reshape((n, 1)), x.reshape((n, 1)), 'sqeuclidean')

@@ -1,5 +1,7 @@
 import tensorflow as tf
 import os
+import ot
+import numpy as np
 #
 from rl.misc.utilies import get_dirs
 #
@@ -21,6 +23,16 @@ def f_div(f, log_p, log_q):
     ratio = tf.exp(log_p - log_q)
     dist = tf.reduce_sum(tf.exp(log_q) * f(ratio))
     return dist
+
+def w2(action, p, q):
+    # X = action.reshape((32, 1))
+    # print(X.shape)
+    M2 = ot.dist(x1=action, x2=action, metric='sqeuclidean')
+    M2 /= M2.max()
+    reg = 1e-2
+    dist = ot.sinkhorn2(p, q, M2, reg)
+    return dist
+
 
 def build_mlp(input, sizes, activations, trainable):
     last_out = input
