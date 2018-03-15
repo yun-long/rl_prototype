@@ -25,8 +25,6 @@ def f_div(f, log_p, log_q):
     return dist
 
 def w2(action, p, q):
-    # X = action.reshape((32, 1))
-    # print(X.shape)
     M2 = ot.dist(x1=action, x2=action, metric='sqeuclidean')
     M2 /= M2.max()
     reg = 1e-2

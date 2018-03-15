@@ -67,7 +67,7 @@ def learn(env, sess, i_trial,
           gamma=0.99,
           lam=0.95,
           clip_param=0.2,
-          beta=1.0,
+          beta=3.0,
           ent_coeff=0.0,
           c_lrate=3e-4,
           a_lrate=3e-4,
@@ -79,7 +79,7 @@ def learn(env, sess, i_trial,
         div_target = w2_target
         beta = 0.1
     else:
-        beta = 1.0
+        beta = 3.0
         div_target = kl_target
     act_space = env.action_space
     obs_space = env.observation_space
@@ -123,6 +123,8 @@ def learn(env, sess, i_trial,
                 ws2 = tf.placeholder(tf.float32, shape=1, name='wasserstein2_distance')
                 # mean_w2 = tf.reduce_mean()
                 loss_policy = -(tf.reduce_mean(ratio * target_adv) - beta * ws2)
+            else:
+                raise NotImplementedError
             train_opt_policy = tf.train.AdamOptimizer(a_lrate).minimize(loss_policy)
 
     assign_old_eq_new = U.function([], [], updates=[tf.assign(oldv, newv) for (oldv, newv) in zipsame(oldpi.get_params(), pi.get_params())])
@@ -192,7 +194,7 @@ def learn(env, sess, i_trial,
                     action = paths['action'][batch_idx]
                     p = p_act_smaple[batch_idx]
                     q = get_prob(state=paths['state'], action=paths['action'])[batch_idx]
-                    dist_w = w2(action=action, log_p=p, log_q=q)
+                    dist_w = w2(action=action, p=p, q=q)
                 else:
                     dist_w = None
                 loss_a, d, ent, _ = train_actor(state=paths['state'][batch_idx],
@@ -235,26 +237,28 @@ def run_trails(env, num_trails, num_episodes, method, alpha, seed):
 
 if __name__ == '__main__':
     seed = 1234
-    env_ID = "Pendulum-v0"
+    # env_ID = "Pendulum-v0"
+    env_ID = "MountainCarContinuous-v0"
     path_result = get_dirs(os.path.join(ppo_result_path, 'pendulum'))
     path_csv = os.path.join(path_result, 'data.csv')
-    # env_ID = "MountainCarContinuous-v0"
     env = gym.make(env_ID)
     #
-    methods = ['clip', 'f', 'w2']
+    methods = ['f', 'clip']
     # methods = ['w2']
-    alphas = [1.0, 2.0, 'GAN', -1.0]
-    num_trails = 1
-    num_episodes = 300
+    alphas = ['GAN', 1.0, 2.0]
+    num_trails = 5
+    num_episodes = 100
     for i_m, method in enumerate(methods):
         if method == 'clip' or method == 'w2':
+            if method == 'w2':
+                num_trails = 2
             stats = run_trails(env, num_trails, num_episodes, method=method, alpha=method, seed=seed)
             data.to_csv(path_csv, index=False)
         elif method == 'f':
             for i_alpha, alpha in enumerate(alphas):
                 stats = run_trails(env, num_trails, num_episodes, method=method, alpha=alpha, seed=seed)
-            #
-            data.to_csv(path_csv, index=False)
+                #
+                data.to_csv(path_csv, index=False)
 
 
 

@@ -1,5 +1,7 @@
 import numpy as np
 from rl.featurizer.one_hot_featurizer import OneHotFeaturizer
+from gym.spaces.discrete import Discrete
+from gym.spaces.tuple_space import Tuple
 #
 
 class RandomPolicy(object):
@@ -11,13 +13,40 @@ class RandomPolicy(object):
         action = np.random.choice(np.arange(len(self.action_probs)),p=self.action_probs)
         return action
 
+class DistributionPolicy_V1(object):
+    """
+    The policy is defined as the distribution of state-action pairs.
+    Specifically for env.action_space == Tuple(Discrete, Discrete)
+    """
+    def __init__(self, env):
+        assert isinstance(env.action_space, Tuple)
+        assert isinstance(env.observation_space, Discrete)
+        self.env = env
+        self.obs_dim = env.observation_space.n
+        self.act_shape = []
+        for i, space in enumerate(env.action_space.spaces):
+            self.act_shape.append(space.n)
+        self.act_dim = np.sum(self.act_shape)
+        self.q_dist = np.ones(shape=(self.obs_dim, self.act_dim)) / (self.obs_dim * self.act_dim)
+        self.mu_dist = np.ones(shape=self.obs_dim) / self.obs_dim
+        #policy
+        self.pi = self.q_dist / self.mu_dist[:, None]
+        print(self.act_shape)
+
+    def predict_action(self, state):
+        action_prob = self.pi[state]
+        action = np.random.choice(np.arange(len(action_prob)), p=action_prob)
+        if action % self.act_shape[0] == 0:
+            return (action, 0, 0, )
+        return action
 
 class DistributionPolicy(object):
     """
     The policy is defined as the distribution of state-action pairs.
+    Specifically for env.action_space == Discrete
     """
-
     def __init__(self, env):
+        assert isinstance(env.action_space, Discrete)
         self.env = env
         # state action distribution
         self.q_dist = np.ones((env.observation_space.n, env.action_space.n)) \

@@ -1,12 +1,16 @@
 import numpy as np
-import matplotlib.pyplot as plt
+from gym.spaces.discrete import Discrete
+from gym.spaces.tuple_space import Tuple
 
 class OneHotFeaturizer(object):
 
     def __init__(self, env):
         self.env = env
-        self.num_features = env.observation_space.n
-        self.obs_dims = env.observation_space.n
+        if type(env.observation_space) is Discrete:
+            self.num_features = env.observation_space.n
+            self.obs_dims = env.observation_space.n
+        else:
+            raise NotImplementedError
         self.phi = np.eye(self.num_features)
 
     def transform(self, state):

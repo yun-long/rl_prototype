@@ -15,7 +15,7 @@ import numpy as np
 
 
 def f_reps(val_fn, pol_fn, sampler, num_ep, num_sp, alpha):
-    # env.seed(seed=147691)
+    env.seed(seed=147691)
     rnd = np.random.RandomState(seed=43225801)
     ep_rewards = []
     etap = (15.0, 0.9, 0.1)
@@ -86,7 +86,6 @@ if __name__ == '__main__':
                                  alpha=alpha)
 
             mean_rewards[:, i_trial, i_alpha] = episodes_rewards
-    # plot_tr_ep_rs(mean_rewards, show=True)
     plot_coeff_tr_ep_rs(mean_rewards, alphas, label=r'$\alpha$ = ',show=True)
     # plot_2D_value(env=env, value_fn=val_fn, show=True)
 

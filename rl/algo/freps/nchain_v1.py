@@ -9,7 +9,6 @@ from rl.misc.dual_function import optimize_fdual_fn_v1, optimize_dual_fn_paramv
 from rl.misc.plot_rewards import plot_coeff_tr_ep_rs
 from rl.misc.plot_value import plot_2D_value
 from gym.envs.toy_text.nchain import NChainEnv
-
 #
 import numpy as np
 
@@ -53,6 +52,7 @@ def f_reps(val_fn, pol_fn, sampler, num_ep, num_sp, alpha):
 
 if __name__ == '__main__':
     env = NChainEnv(n=5)
+    # env = RepeatCopyEnv()
     print("Action Space : ", env.action_space)
     print("Observation Space : ", env.observation_space)
     #
