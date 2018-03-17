@@ -1,12 +1,7 @@
 import tensorflow as tf
-import os
 import ot
 import numpy as np
 #
-from rl.misc.utilies import get_dirs
-#
-result_path = os.path.join(os.path.realpath("../../../"), 'results')
-ppo_result_path = get_dirs(os.path.join(result_path, 'ppo'))
 
 def alpha_fn(alpha=1.0):
     if alpha == 1.0: # kl divergence

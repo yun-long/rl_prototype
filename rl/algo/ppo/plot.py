@@ -4,7 +4,9 @@ import seaborn as sns
 #
 sns.set()
 #
+
 path = '/Users/yunlong/Gitlab/rl_prototype/results/ppo/pendulum/data.csv'
+
 data = pd.read_csv(path)
 # g = sns.factorplot(x='episodes', y='rewards', hue='alphas', data=data, kind='strip')
 fig = plt.figure(figsize=(15, 7))
