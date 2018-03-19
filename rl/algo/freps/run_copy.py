@@ -16,13 +16,13 @@ import datetime
 #
 methods = ['freps', 'freps_light']
 env_IDs = ['Copy-v0', 'DuplicatedInput-v0', 'RepeatCopy-v0', 'Reverse-v0']
-alphas = [-10.0, -4.0, -2.0, -1.0, 0.0, 0.5, 1.0, 2.0]
+alphas = [-15.0, -10.0,  -2.0,  0.0,  1.0, 2.0]
 if __name__ == '__main__':
     method = methods[0]
     #
     env_ID = env_IDs[0]
     # env = gym.make(env_ID)
-    n_actions = [40, 80, 160]
+    n_actions = [20, 40, 80, 160]
     env = CopyEnv(base=int(n_actions[0] / 4))
     print("Action Space: ", env.action_space)
     print("Observation Space: ", env.observation_space)
