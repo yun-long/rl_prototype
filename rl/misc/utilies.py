@@ -7,7 +7,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 def get_dirs(path):
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.makedirs(path)
     return path
 
 def discount_norm_rewards(rewards, gamma):
