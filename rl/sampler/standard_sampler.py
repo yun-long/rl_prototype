@@ -1,11 +1,19 @@
 import numpy as np
 #
+from gym.spaces.tuple_space import Tuple
+from gym.spaces.discrete import Discrete
 from rl.misc.memory import Transition
 from collections import defaultdict
 
 class StandardSampler(object):
 
     def __init__(self, env):
+        if isinstance(env.action_space, Tuple):
+            self.act_type = 'tuple'
+        elif isinstance(env.action_space, Discrete):
+            self.act_type = 'discrete'
+        else:
+            raise NotImplementedError
         self.env = env
 
     def sample_data(self, policy, N):
@@ -20,12 +28,22 @@ class StandardSampler(object):
         mean_reward = []
         for i in range(N):
         # while True:
-            action = policy.predict_action(state)
-            next_state, reward, done, _ = self.env.step(action)
-            data.append(Transition(state=state,
-                                   action=action,
-                                   next_state=next_state,
-                                   reward=reward))
+            if self.act_type == 'tuple':
+                action_idx, action  = policy.predict_action(state)
+                next_state, reward, done, _ = self.env.step(action)
+                data.append(Transition(state=state,
+                                       action=action_idx,
+                                       next_state=next_state,
+                                       reward=reward))
+            elif self.act_type == 'discrete':
+                action = policy.predict_action(state)
+                next_state, reward, done, _ = self.env.step(action)
+                data.append(Transition(state=state,
+                                       action=action,
+                                       next_state=next_state,
+                                       reward=reward))
+            else:
+                raise NotImplementedError
             mean_reward.append(reward)
             if done:
                 next_state = self.env.reset()
@@ -49,7 +67,6 @@ class StandardSampler(object):
                                            - featurizer.transform(transition.state)
         sa_pairs, r_array, features_diff_array, sa_pairs_n = [], [], [], []
         for key in sorted(n.keys()):
-            print(key)
             sa_pairs_n.append(n[key])
             sa_pairs.append(key)
             r_array.append(r[key] / n[key])

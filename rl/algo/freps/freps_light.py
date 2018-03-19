@@ -1,10 +1,10 @@
 """
-Standard fREPS
+Light fREPS
 """
 import pandas as pd
-from rl.misc.dual_function import optimize_fdual_fn_v1, optimize_dual_fn_paramv
+from rl.misc.dual_function import optimize_fdual_fn_v0, optimize_dual_fn_paramv
 
-def freps(i_trial, val_fn, pol_fn, sampler, num_ep, num_sp, alpha, rnd, columns=None):
+def freps_light(i_trial, val_fn, pol_fn, sampler, num_ep, num_sp, alpha, rnd, columns=None):
     ep_rewards = []
     etap = (15.0, 0.9, 0.1)
     etaf = lambda i: max(etap[0] * etap[1]**i, etap[2])
@@ -28,7 +28,8 @@ def freps(i_trial, val_fn, pol_fn, sampler, num_ep, num_sp, alpha, rnd, columns=
             pol_fn.update_reps(A=A, param_eta=eta0, param_v=v, g=g, keys=sa_pairs)
             val_fn.update(new_param_v=v)
         else:
-            v, lamda, kappa, A, fcp = optimize_fdual_fn_v1(rewards=rewards,
+            # light version f-REPS
+            v, lamda, kappa, A, fcp = optimize_fdual_fn_v0(rewards=rewards,
                                                            features_diff=feat_diff,
                                                            sa_n=sa_pair_n,
                                                            eta=eta0,

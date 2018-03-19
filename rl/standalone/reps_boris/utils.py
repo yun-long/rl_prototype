@@ -92,15 +92,17 @@ def plot_fcliff(ax, env, mu, pi, v):
 
 
 # =============================== MDP analysis ============================== #
-def env_to_pr(env):
+def env_to_pr(env, policy=None):
   """
   Extracts matrices P(s, a, s') and R(s, a, s') from env.P.
   
   :param env: DicreteEnv
   :return: (P, R) - dynamics and rewards
   """
-  P = np.zeros((env.nS, env.nA, env.nS))
-  R = np.zeros((env.nS, env.nA, env.nS))
+  P = np.zeros((policy.obs_dim, policy.act_dim, policy.obs_dim))
+  R = np.zeros((policy.obs_dim, policy.act_dim, policy.obs_dim))
+  # P = np.zeros((env.nS, env.nA, env.nS))
+  # R = np.zeros((env.nS, env.nA, env.nS))
   for s in env.P.keys():
     for a in env.P[s].keys():
       for tuple in env.P[s][a]:
@@ -110,7 +112,7 @@ def env_to_pr(env):
   return P, R
 
 
-def expected_return(env, pi):
+def expected_return(env, pi, policy=None):
   """
   Compute $\sum_{s,a,s'}{ \mu(s) \pi(a|s) P(s'|s,a) R(s,a,s') }$.
 
@@ -119,7 +121,7 @@ def expected_return(env, pi):
   :return: float
   """
   # Compute P(s'|s) under pi(a|s). P is implemented as array P[s,s']
-  p, R = env_to_pr(env)
+  p, R = env_to_pr(env, policy)
   P_pi = np.einsum('ij,ijk->ik', pi, p)
   # Find stationary distribution mu(s)
   vals, vecs = sp.linalg.eig(P_pi.T)
@@ -260,14 +262,14 @@ def gather_data(env, pi, n_steps):
   D = {}
   s = env.reset()
   for i in range(n_steps):
-    a = pi(s)
+    a_idex, a = pi(s)
     s_next, rew, done, _ = env.step(a)
     if done:
       s_next = env.reset()
-    if (s, a) in D:
-      D[(s, a)].append((s_next, rew))
+    if (s, a_idex) in D:
+      D[(s, a_idex)].append((s_next, rew))
     else:
-      D[(s, a)] = [(s_next, rew)]
+      D[(s, a_idex)] = [(s_next, rew)]
     s = s_next
   return D
 
@@ -322,9 +324,10 @@ def reps_pe(dual, n_th, rnd):
   return sol.x, sol.fun
 
 
-def reps_pi(env, pi, A, sa_keys, eta, th, lam):
+def reps_pi(env, pi, A, sa_keys, eta, th, lam, policy=None):
   # Set advantage close to average for all (s,a) pairs
-  A_SA = lam * np.ones((env.observation_space.n, env.action_space.n))
+  # A_SA = lam * np.ones((env.observation_space.n, env.action_space.n))
+  A_SA = lam * np.ones((policy.obs_dim, policy.act_dim))
   # For visited (s,a) pairs, use computed advantage
   A_SA[tuple(zip(*sa_keys))] = A(th)
   # Update policy
@@ -761,11 +764,13 @@ def f_pe(dual, A, dA, rnd, alpha, eta):
   return sol.x[:-1], sol.x[-1]
 
 
-def f_pi(env, pi, f_div, A, sa_keys, eta, th, lam):
+def f_pi(env, pi, f_div, A, sa_keys, eta, th, lam, policy=None):
   _, _, fcp, _ = f_div
 
   # Set advantage close to average for all (s,a) pairs
-  A_SA = lam * np.ones((env.nS, env.nA))
+  # s_dim = env.observation_space.n
+  # A_SA = lam * np.ones((env.nS, env.nA))
+  A_SA = lam * np.ones((policy.obs_dim, policy.act_dim))
   # For visited (s,a) pairs, use computed advantage
   A_SA[tuple(zip(*sa_keys))] = A(th)
   y = fcp((A_SA - lam) / eta)
@@ -777,9 +782,11 @@ def f_pi(env, pi, f_div, A, sa_keys, eta, th, lam):
   return pi_new
 
 
-def sim_f(env, etaf, phi, seeds, alphas, n_sim, n_iter, n_steps, **kwargs):
+def sim_f(env, etaf, phi, policy, seeds, alphas, n_sim, n_iter, n_steps,  **kwargs):
   """Gather `n_sim` learning trajectories per `alpha`, each `n_iter` long."""
-  A_space = np.arange(env.nA)
+  # A_space = np.arange(env.nA)
+  A_space = policy.actions
+  # pi_init = policy.pi
   sim_orchestra = {}
   for alpha in alphas:
     print("Alpha = {}".format(alpha))
@@ -792,12 +799,18 @@ def sim_f(env, etaf, phi, seeds, alphas, n_sim, n_iter, n_steps, **kwargs):
     for k in range(n_sim):
       print("Simulation {}".format(k))
       # Start every simulation from a random policy
-      pi = np.ones((env.nS, env.nA)) / env.nA
+      # pi = np.ones((env.nS, env.nA)) / env.nA
+      pi = policy.pi
       sim_traj = {'pi':[pi], 'th':[], 'lam':[], 'kap':[]}
       t0 = time.time()
       for i in range(n_iter):
         # Gather on-policy data
-        D = gather_data(env, lambda s: rnd.choice(A_space, p=pi[s]), n_steps)
+        def pol(state):
+            action_prob = pi[state]
+            action_idex = rnd.choice(np.arange(len(action_prob)), p=action_prob)
+            action = A_space[action_idex]
+            return action_idex, action
+        D = gather_data(env, pol, n_steps)
         # Critic
         eta = etaf(i)
         if alpha == 1.0:
@@ -808,9 +821,9 @@ def sim_f(env, etaf, phi, seeds, alphas, n_sim, n_iter, n_steps, **kwargs):
           th, lam = f_pe(dual, A, dA, rnd, alpha, eta)
         # Actor
         if alpha == 1.0:
-          pi_new = reps_pi(env, pi, A, sa_keys, eta, th, lam)
+          pi_new = reps_pi(env, pi, A, sa_keys, eta, th, lam, policy=policy)
         else:
-          pi_new = f_pi(env, pi, f_div, A, sa_keys, eta, th, lam)
+          pi_new = f_pi(env, pi, f_div, A, sa_keys, eta, th, lam, policy=policy)
         # Save iteration snapshot
         add_to_data(sim_traj, pi, th, lam, None)
         if (i+1) % 10 == 0:

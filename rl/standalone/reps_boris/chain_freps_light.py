@@ -4,19 +4,25 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from rl.standalone.reps_boris.chain import ChainEnv
 from rl.standalone.reps_boris.utils import *
+from rl.policy.discrete_policy import DistributionPolicy_V1
+import gym
+from gym.envs.algorithmic.copy_ import CopyEnv
 #
 np.set_printoptions(precision=6, suppress=True)
 sns.set()
 
 # Environment
-env = ChainEnv(8)
-S_space = tuple(range(env.nS))
+# env = ChainEnv(8)
+# S_space = tuple(range(env.nS))
+# phi_mat = np.eye(len(S_space))
+env_ID = 'Copy-v0'
+env = CopyEnv(base=5)
+S_space = tuple(range(env.observation_space.n))
 phi_mat = np.eye(len(S_space))
-
 # Parameters
 params = dict(
   seeds=(147691, 43225801),
-  alphas=(-1.0,),
+  alphas=(2.0,),
   # alphas=(-1.0, 0.0, 0.5, 1.0, 2.0),
   # alphas=(-4.0, -2.0, 0.0, 1.0, 3.0, 5.0),
   # alphas=(-10.0, 0.0, 1.0, 10.0),
@@ -28,13 +34,13 @@ params = dict(
 etap = params['etap']
 etaf = lambda i: max(etap[0] * etap[1]**i, etap[2])
 phi = lambda s: phi_mat[s]
-
+policy = DistributionPolicy_V1(env)
 # Simulation
-sim_all = sim_f(env, etaf, phi, **params)
+sim_all = sim_f(env, etaf, phi, policy, **params)
 
 # Returns
 ret_all = {alpha: np.array([
-  [expected_return(env, pi) for pi in sim_traj['pi']]
+  [expected_return(env, pi, policy) for pi in sim_traj['pi']]
   for sim_traj in sim_ensemble
 ]) for alpha, sim_ensemble in sim_all.items()}
 ret_mat = np.stack([ret_all[alpha] for alpha in params['alphas']], axis=-1)
