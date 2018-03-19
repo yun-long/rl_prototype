@@ -8,7 +8,7 @@ sns.set()
 #
 
 # path = '/Users/yunlong/Gitlab/rl_prototype/results/freps/NChain-v0/freps_-10.0_-4.0_-2.0_-1.0_0.0_0.5_1.0_2.0_3.0_5.0_10.0_data.csv'
-path = '/Users/yunlong/Gitlab/rl_prototype/results/freps/Copy-v0/freps_20_-10.0_-4.0_-2.0_-1.0_0.0_0.5_1.0_2.0_data.csv'
+path = '/Users/yunlong/Gitlab/rl_prototype/results/freps/DuplicatedInput-v0/2018-03-20-00-22-57/freps_light_40_-15.0_-10.0_-2.0_0.0_1.0_2.0_data.csv'
 def plot_data(data_list):
     n_data = len(data_list)
     fig, axes = plt.subplots(nrows=1, ncols=n_data, figsize=(15, 3))
@@ -25,9 +25,11 @@ def plot_data(data_list):
 
 if __name__ == '__main__':
     data = pd.read_csv(path)
-    alpha_list = [[-10.0, 0.0, 1.0, 10.0],
-                 [-4.0, -2.0, 0.0, 1.0, 3.0, 5.0],
-                 [-1.0, 0.0, 0.5, 1.0, 2.0]]
+    # alpha_list = [[-15.0, -10.0, 0.0, 1.0, 10.0],
+    #              [-4.0, -2.0, 0.0, 1.0, 3.0, 5.0],
+    #              [-1.0, 0.0, 0.5, 1.0, 2.0]]
+    alpha_list = [[-15.0, -10.0, -2.0],
+                   [0.0, 1.0, 2.0]]
     data_list = []
     for i, alpha in enumerate(alpha_list):
         data_list.append(data.loc[data['alpha'].isin(alpha)])
