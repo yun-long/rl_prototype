@@ -16,6 +16,24 @@ class StandardSampler(object):
             raise NotImplementedError
         self.env = env
 
+
+    def rollout(self, policy):
+        state = self.env.reset()
+        done = False
+        while not done:
+            if self.act_type == 'tuple':
+                action_idx, action = policy.predict_action(state)
+                next_state, reward, done, _ = self.env.step(action)
+                yield next_state, state, action_idx, reward, done
+                state = next_state
+            elif self.act_type == 'discrete':
+                action = policy.predict_action(state)
+                next_state, reward, done, _ = self.env.step(action)
+                yield next_state, state, action, reward, done
+                state = next_state
+            else:
+                raise NotImplementedError
+
     def sample_data(self, policy, N):
         """
         Collect N samples (s, a, s', r) by following policy pi
@@ -25,31 +43,44 @@ class StandardSampler(object):
         """
         data = []
         state = self.env.reset()
-        mean_reward = []
-        for i in range(N):
-        # while True:
-            if self.act_type == 'tuple':
-                action_idx, action  = policy.predict_action(state)
-                next_state, reward, done, _ = self.env.step(action)
-                data.append(Transition(state=state,
-                                       action=action_idx,
-                                       next_state=next_state,
-                                       reward=reward))
-            elif self.act_type == 'discrete':
-                action = policy.predict_action(state)
-                next_state, reward, done, _ = self.env.step(action)
+        rewards = []
+        n_path = 0
+        # for i in range(N):
+        while len(rewards) < N:
+            for transition in self.rollout(policy):
+                next_state, state, action, reward, done = transition
                 data.append(Transition(state=state,
                                        action=action,
                                        next_state=next_state,
                                        reward=reward))
-            else:
-                raise NotImplementedError
-            mean_reward.append(reward)
-            if done:
-                next_state = self.env.reset()
-                # break
-            state = next_state
-        return data, np.mean(mean_reward)
+                rewards.append(reward)
+            n_path += 1
+        # # while True:
+        #     if self.act_type == 'tuple':
+        #         action_idx, action  = policy.predict_action(state)
+        #         next_state, reward, done, _ = self.env.step(action)
+        #         data.append(Transition(state=state,
+        #                                action=action_idx,
+        #                                next_state=next_state,
+        #                                reward=reward))
+        #     elif self.act_type == 'discrete':
+        #         action = policy.predict_action(state)
+        #         next_state, reward, done, _ = self.env.step(action)
+        #         data.append(Transition(state=state,
+        #                                action=action,
+        #                                next_state=next_state,
+        #                                reward=reward))
+        #     else:
+        #         raise NotImplementedError
+        #     mean_reward.append(reward)
+        #     if done:
+        #         n_path += 1
+        #         next_state = self.env.reset()
+        #         # break
+        #     state = next_state
+        #     print(n_path)
+        print(n_path)
+        return data, np.sum(rewards) / n_path
 
     def count_data(self, data, featurizer):
         """
