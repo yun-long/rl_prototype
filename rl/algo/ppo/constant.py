@@ -19,7 +19,7 @@ data = pd.DataFrame(columns=columns)
 seed = 12345
 #
 params = {'methods': {'clip': [None],
-                      'f': [1.0, 2.0, 'GAN'],
+                      # 'f': [1.0, 2.0, 'GAN'],
                       # 'w2': [None]
                       },
           'num_trials': 5,

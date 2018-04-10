@@ -55,6 +55,8 @@ class StandardSampler(object):
                                        reward=reward))
                 rewards.append(reward)
             n_path += 1
+            # print(n_path)
+            # print(N, len(rewards))
         # # while True:
         #     if self.act_type == 'tuple':
         #         action_idx, action  = policy.predict_action(state)

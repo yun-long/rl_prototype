@@ -27,9 +27,9 @@ if __name__ == '__main__':
     data_name = method
     columns = ['alpha', 'trial', 'episode', 'reward']
     # parameters
-    num_episodes = 300
+    num_episodes = 100
     num_trials = 10
-    num_samples = 1000
+    num_samples = 10000
     for i_b, base in enumerate(n_bases):
         env = CopyEnv(base=base)
         # env = gym.make(env_ID)

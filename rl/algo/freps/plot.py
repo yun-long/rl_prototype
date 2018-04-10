@@ -8,14 +8,17 @@ sns.set()
 #
 
 # path = '/Users/yunlong/Gitlab/rl_prototype/results/freps/NChain-v0/freps_-10.0_-4.0_-2.0_-1.0_0.0_0.5_1.0_2.0_3.0_5.0_10.0_data.csv'
-path = '/Users/yunlong/Gitlab/rl_prototype/results/freps/DuplicatedInput-v0/2018-03-20-00-22-57/freps_light_40_-15.0_-10.0_-2.0_0.0_1.0_2.0_data.csv'
+path = '/Users/yunlong/Gitlab/rl_prototype/results/freps/Copy-v0/2018-03-20-02-33-13/freps_light_5_-10.0_-2.0_0.0_1.0_2.0_data.csv'
 def plot_data(data_list):
     n_data = len(data_list)
     fig, axes = plt.subplots(nrows=1, ncols=n_data, figsize=(15, 3))
     for i, data in enumerate(data_list):
         ax = axes[i]
         # ax.set_yticks([2, 4])
-        ax = sns.tsplot(data=data, time='episode', value='reward', unit='trial', condition='alpha', ci='sd', ax=ax)
+        # ax = sns.tsplot(data=data, time='episode', value='reward', unit='trial', condition='alpha', ci='sd', ax=ax)
+        # data_list.append(data.loc[data['alpha'].isin(alpha)])
+        # print(data.loc[:, 'trial'])
+        ax = sns.tsplot(data.loc['trial'].isin([0, 1, 2]))
         ax.set_xlabel('')
         ax.set_ylabel('')
     # plt.setp([a.get_xticklabels() for a in axes[0, :]], visible=False)
@@ -34,5 +37,5 @@ if __name__ == '__main__':
     for i, alpha in enumerate(alpha_list):
         data_list.append(data.loc[data['alpha'].isin(alpha)])
     plot_data(data_list=data_list)
-    # plt.show()
+    plt.show()
     # print(data.loc[data['alpha'].isin([-10.0, 0.0, 1.0, 10.0])])
