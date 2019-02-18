@@ -10,9 +10,9 @@ env = Pend2dBallThrowDMP()
 numDim = 10
 numSamples = 25
 maxIter = 100
-numTrials = 10
+numTrials = 6
 
-lambda_coeff = [3., 7., 25.]
+lambda_coeff = [3.]
 meanReward = np.zeros((maxIter, numTrials, len(lambda_coeff)))
 
 t = time.time()
@@ -21,6 +21,9 @@ for l in range(len(lambda_coeff)):
     for k in range(numTrials):
         policy = GPConstantMean(num_dim=numDim)
         for j in range(maxIter):
+            # if j % 10 == 0:
+                # env.animate_fig(np.random.multivariate_normal(policy.Mu, policy.Sigma),
+                                # 'coef_'+str(lambda_coeff[l])+'_iter'+str(j))
             rewards = np.zeros(numSamples)
             theta_samples = policy.sample_theta(num_samples=numSamples)
             for i in range(numSamples):
@@ -41,8 +44,9 @@ for l in range(len(lambda_coeff)):
             if (j > 0 and abs(meanReward[j,k,l]-meanReward[j-1, k, l]) < 1e-3 or j == maxIter):
                 meanReward[j:, k, l] = np.mean(rewards)
                 break
-        print( ' Elapsed : ' + str(time.time() - t))
-        if k == numTrials -1:
-            env.animate_fig(np.random.multivariate_normal(policy.Mu, policy.Sigma), lambda_coeff)
+        env.animate_fig(np.random.multivariate_normal(policy.Mu, policy.Sigma),
+                        'coef_'+str(lambda_coeff[l])+'_iter'+str(j)+'_trial'+str(k))
+        # print( ' Elapsed : ' + str(time.time() - t))
+        # if k == numTrials -1:
 #
 plot_coeff_tr_ep_rs(mean_rewards=meanReward, coeff=lambda_coeff, show=True)

@@ -11,7 +11,7 @@ from functools import partial
 # parameters
 env = Pend2dBallThrowDMP()
 eta_init = 10 # eta
-epsilon_coeffs = [0.1, 0.4, 0.9] # KL bound
+epsilon_coeffs = [0.01, 0.1, 1] # KL bound
 numDim = 10
 numSamples = 25
 maxIter = 100
@@ -65,7 +65,7 @@ for l, epsilon in enumerate(epsilon_coeffs):
             env.animate_fig(np.random.multivariate_normal(policy.Mu, policy.Sigma), epsilon)
 
 fig = plt.figure()
-plt.hold('on')
+# plt.hold(True)
 ax = fig.add_subplot(111)
 ax.set_xlabel('Iteration')
 ax.set_ylabel('Average reward')

@@ -145,8 +145,9 @@ class Pend2dBallThrowDMP():
         frames = []
         t = np.arange(100)
         for i in range(1,100,1):
-            goalCircle = plt.Circle((self.ballGoal[0], self.ballGoal[1]), radius=0.2, fill=False)
+            goalCircle = plt.Circle((self.ballGoal[0], self.ballGoal[1]), radius=0.2, fill=True, color='b')
             figure, ax = plt.subplots()
+            plt.tight_layout()
             mp1, mp2 = self.getJointsInTaskSpace(q[t[i] - 1, :])
             thisx = [0, mp1[0], mp2[0]]
             thisy = [0, mp1[1], mp2[1]]

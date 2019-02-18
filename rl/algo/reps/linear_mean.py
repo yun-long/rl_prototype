@@ -14,8 +14,8 @@ from rl.misc.plot_rewards import plot_tr_ep_rs
 import numpy as np
 #
 # env = Continuous_MountainCarEnv()
-# env = PendulumEnv()
-env = RandomJumpEnv()
+env = PendulumEnv()
+# env = RandomJumpEnv()
 
 #
 print("Action space : ", env.action_space)

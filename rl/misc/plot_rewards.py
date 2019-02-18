@@ -3,7 +3,7 @@ import numpy as np
 import os
 import seaborn as sns
 
-plt.style.use('ggplot')
+# plt.style.use('ggplot')
 
 def plot_ep_rewards(ep_rs, show=True):
     fig = plt.figure()
@@ -28,8 +28,8 @@ def plot_tr_ep_rs(tr_ep_rs, title=None, show=True):
         plt.show()
     return fig
 
-def plot_coeff_tr_ep_rs(mean_rewards, coeff, label=r'$\alpha$ = ', logR = False, show=True, savepath=None):
-    fig = plt.figure()
+def plot_coeff_tr_ep_rs(mean_rewards, coeff, label=r'$\beta$ = ', logR = False, show=True, savepath=None):
+    fig = plt.figure(figsize=(6, 3))
     # plt.hold('on')
     ax = fig.add_subplot(111)
     ax.set_xlabel('Iteration')
